@@ -1,0 +1,290 @@
+<svg width="1380" height="1080" viewBox="0 0 1380 1080" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+    <path d="M1 2L8 5L1 8" fill="none" stroke="#888" stroke-width="1.5" stroke-linecap="round"/>
+  </marker>
+  <marker id="arrd" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+    <path d="M1 2L8 5L1 8" fill="none" stroke="#555" stroke-width="1.5" stroke-linecap="round"/>
+  </marker>
+  <marker id="tri" viewBox="0 0 12 10" refX="11" refY="5" markerWidth="8" markerHeight="7" orient="auto">
+    <path d="M0 1L11 5L0 9" fill="none" stroke="#555" stroke-width="1.5"/>
+  </marker>
+  <marker id="triF" viewBox="0 0 12 10" refX="11" refY="5" markerWidth="8" markerHeight="7" orient="auto">
+    <path d="M0 0L12 5L0 10Z" fill="#666" stroke="none"/>
+  </marker>
+  <marker id="diam" viewBox="0 0 16 10" refX="1" refY="5" markerWidth="10" markerHeight="7" orient="auto-start-reverse">
+    <path d="M8 0L16 5L8 10L0 5Z" fill="none" stroke="#777" stroke-width="1.2"/>
+  </marker>
+  <marker id="diamF" viewBox="0 0 16 10" refX="1" refY="5" markerWidth="10" markerHeight="7" orient="auto-start-reverse">
+    <path d="M8 0L16 5L8 10L0 5Z" fill="#888" stroke="none"/>
+  </marker>
+  <filter id="sh" x="-10%" y="-15%" width="130%" height="140%">
+    <feDropShadow dx="1" dy="1" stdDeviation="1.8" flood-opacity="0.13"/>
+  </filter>
+</defs>
+<rect width="1380" height="1080" fill="white"/>
+<rect x="0" y="0" width="1380" height="38" fill="#F0F4F8"/>
+<line x1="0" y1="38" x2="1380" y2="38" stroke="#CDD5E0" stroke-width="1"/>
+<text x="690" y="24" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#1A1A2E">Diagramme de Classes — JobFinder AI v2.1</text>
+<rect x="23" y="53" width="190" height="199" rx="5" fill="rgba(0,0,0,0.07)"/>
+<rect x="20" y="50" width="190" height="199" rx="5" fill="white" stroke="#CCC" stroke-width="0.9"/>
+<rect x="20" y="50" width="190" height="28" rx="5" fill="#1565C0"/>
+<rect x="20" y="74" width="190" height="4" fill="#1565C0"/>
+<text x="115" y="65" text-anchor="middle" dominant-baseline="central" font-family="Arial, sans-serif" font-size="11.5" font-weight="bold" fill="white">User</text>
+<text x="28" y="89" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ id : int</text>
+<text x="28" y="106" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ username : str</text>
+<text x="28" y="123" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ email : str</text>
+<text x="28" y="140" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ role : str {candidat|recruteur|admin}</text>
+<text x="28" y="157" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ plan : str</text>
+<text x="28" y="174" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ is_verified : bool</text>
+<text x="28" y="191" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ date_joined : datetime</text>
+<line x1="21" y1="204" x2="209" y2="204" stroke="#E0E0E0" stroke-width="0.8"/>
+<text x="28" y="218" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#444" font-style="italic">+ is_employer() : bool</text>
+<text x="28" y="235" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#444" font-style="italic">+ is_admin() : bool</text>
+<rect x="23" y="274" width="190" height="148" rx="5" fill="rgba(0,0,0,0.07)"/>
+<rect x="20" y="271" width="190" height="148" rx="5" fill="white" stroke="#CCC" stroke-width="0.9"/>
+<rect x="20" y="271" width="190" height="28" rx="5" fill="#1565C0"/>
+<rect x="20" y="295" width="190" height="4" fill="#1565C0"/>
+<text x="115" y="286" text-anchor="middle" dominant-baseline="central" font-family="Arial, sans-serif" font-size="11.5" font-weight="bold" fill="white">EmployerProfile</text>
+<text x="28" y="310" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ company_name : str</text>
+<text x="28" y="327" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ company_website : str</text>
+<text x="28" y="344" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ company_size : str</text>
+<text x="28" y="361" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ is_verified : bool</text>
+<text x="28" y="378" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ logo : ImageField</text>
+<line x1="21" y1="391" x2="209" y2="391" stroke="#E0E0E0" stroke-width="0.8"/>
+<text x="28" y="405" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#444" font-style="italic">+ jobs_count() : int</text>
+<rect x="23" y="444" width="190" height="119" rx="5" fill="rgba(0,0,0,0.07)"/>
+<rect x="20" y="441" width="190" height="119" rx="5" fill="white" stroke="#CCC" stroke-width="0.9"/>
+<rect x="20" y="441" width="190" height="28" rx="5" fill="#00695C"/>
+<rect x="20" y="465" width="190" height="4" fill="#00695C"/>
+<text x="115" y="456" text-anchor="middle" dominant-baseline="central" font-family="Arial, sans-serif" font-size="11.5" font-weight="bold" fill="white">SearchAlert</text>
+<text x="28" y="480" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ label : str</text>
+<text x="28" y="497" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ keywords : str</text>
+<text x="28" y="514" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ min_score : int</text>
+<text x="28" y="531" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ is_active : bool</text>
+<text x="28" y="548" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ last_sent : datetime</text>
+<rect x="243" y="53" width="190" height="165" rx="5" fill="rgba(0,0,0,0.07)"/>
+<rect x="240" y="50" width="190" height="165" rx="5" fill="white" stroke="#CCC" stroke-width="0.9"/>
+<rect x="240" y="50" width="190" height="28" rx="5" fill="#0277BD"/>
+<rect x="240" y="74" width="190" height="4" fill="#0277BD"/>
+<text x="335" y="65" text-anchor="middle" dominant-baseline="central" font-family="Arial, sans-serif" font-size="11.5" font-weight="bold" fill="white">UserProfile</text>
+<text x="248" y="89" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ avatar : ImageField</text>
+<text x="248" y="106" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ location : str</text>
+<text x="248" y="123" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ desired_title : str</text>
+<text x="248" y="140" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ cv_file : FileField</text>
+<text x="248" y="157" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ bio : text</text>
+<text x="248" y="174" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ completion_score : int</text>
+<line x1="241" y1="187" x2="429" y2="187" stroke="#E0E0E0" stroke-width="0.8"/>
+<text x="248" y="201" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#444" font-style="italic">+ compute_completion() : int</text>
+<rect x="243" y="240" width="190" height="85" rx="5" fill="rgba(0,0,0,0.07)"/>
+<rect x="240" y="237" width="190" height="85" rx="5" fill="white" stroke="#CCC" stroke-width="0.9"/>
+<rect x="240" y="237" width="190" height="28" rx="5" fill="#0277BD"/>
+<rect x="240" y="261" width="190" height="4" fill="#0277BD"/>
+<text x="335" y="252" text-anchor="middle" dominant-baseline="central" font-family="Arial, sans-serif" font-size="11.5" font-weight="bold" fill="white">Skill</text>
+<text x="248" y="276" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ name : str</text>
+<text x="248" y="293" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ category : str</text>
+<text x="248" y="310" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ level : str</text>
+<rect x="243" y="347" width="190" height="148" rx="5" fill="rgba(0,0,0,0.07)"/>
+<rect x="240" y="344" width="190" height="148" rx="5" fill="white" stroke="#CCC" stroke-width="0.9"/>
+<rect x="240" y="344" width="190" height="28" rx="5" fill="#0277BD"/>
+<rect x="240" y="368" width="190" height="4" fill="#0277BD"/>
+<text x="335" y="359" text-anchor="middle" dominant-baseline="central" font-family="Arial, sans-serif" font-size="11.5" font-weight="bold" fill="white">Experience</text>
+<text x="248" y="383" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ title : str</text>
+<text x="248" y="400" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ company : str</text>
+<text x="248" y="417" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ start_date : date</text>
+<text x="248" y="434" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ end_date : date</text>
+<text x="248" y="451" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ is_current : bool</text>
+<line x1="241" y1="464" x2="429" y2="464" stroke="#E0E0E0" stroke-width="0.8"/>
+<text x="248" y="478" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#444" font-style="italic">+ duration() : str</text>
+<rect x="243" y="517" width="190" height="102" rx="5" fill="rgba(0,0,0,0.07)"/>
+<rect x="240" y="514" width="190" height="102" rx="5" fill="white" stroke="#CCC" stroke-width="0.9"/>
+<rect x="240" y="514" width="190" height="28" rx="5" fill="#0277BD"/>
+<rect x="240" y="538" width="190" height="4" fill="#0277BD"/>
+<text x="335" y="529" text-anchor="middle" dominant-baseline="central" font-family="Arial, sans-serif" font-size="11.5" font-weight="bold" fill="white">Education</text>
+<text x="248" y="553" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ degree : str</text>
+<text x="248" y="570" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ institution : str</text>
+<text x="248" y="587" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ start_year : int</text>
+<text x="248" y="604" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ end_year : int</text>
+<rect x="483" y="53" width="200" height="250" rx="5" fill="rgba(0,0,0,0.07)"/>
+<rect x="480" y="50" width="200" height="250" rx="5" fill="white" stroke="#CCC" stroke-width="0.9"/>
+<rect x="480" y="50" width="200" height="28" rx="5" fill="#2E7D32"/>
+<rect x="480" y="74" width="200" height="4" fill="#2E7D32"/>
+<text x="580" y="65" text-anchor="middle" dominant-baseline="central" font-family="Arial, sans-serif" font-size="11.5" font-weight="bold" fill="white">Job</text>
+<text x="488" y="89" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ title : str</text>
+<text x="488" y="106" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ company : str</text>
+<text x="488" y="123" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ description : text</text>
+<text x="488" y="140" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ job_type : str</text>
+<text x="488" y="157" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ domain : str</text>
+<text x="488" y="174" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ location : str</text>
+<text x="488" y="191" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ salary_min/max : int</text>
+<text x="488" y="208" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ source_type : str</text>
+<text x="488" y="225" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ is_active : bool</text>
+<text x="488" y="242" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ posted_at : datetime</text>
+<line x1="481" y1="255" x2="679" y2="255" stroke="#E0E0E0" stroke-width="0.8"/>
+<text x="488" y="269" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#444" font-style="italic">+ salary_text() : str</text>
+<text x="488" y="286" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#444" font-style="italic">+ days_ago() : str</text>
+<rect x="483" y="325" width="190" height="119" rx="5" fill="rgba(0,0,0,0.07)"/>
+<rect x="480" y="322" width="190" height="119" rx="5" fill="white" stroke="#CCC" stroke-width="0.9"/>
+<rect x="480" y="322" width="190" height="28" rx="5" fill="#2E7D32"/>
+<rect x="480" y="346" width="190" height="4" fill="#2E7D32"/>
+<text x="575" y="337" text-anchor="middle" dominant-baseline="central" font-family="Arial, sans-serif" font-size="11.5" font-weight="bold" fill="white">JobSource</text>
+<text x="488" y="361" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ name : str</text>
+<text x="488" y="378" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ url : str</text>
+<text x="488" y="395" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ region : str</text>
+<text x="488" y="412" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ is_active : bool</text>
+<text x="488" y="429" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ last_sync : datetime</text>
+<rect x="723" y="53" width="190" height="131" rx="5" fill="rgba(0,0,0,0.07)"/>
+<rect x="720" y="50" width="190" height="131" rx="5" fill="white" stroke="#CCC" stroke-width="0.9"/>
+<rect x="720" y="50" width="190" height="28" rx="5" fill="#E65100"/>
+<rect x="720" y="74" width="190" height="4" fill="#E65100"/>
+<text x="815" y="65" text-anchor="middle" dominant-baseline="central" font-family="Arial, sans-serif" font-size="11.5" font-weight="bold" fill="white">Application</text>
+<text x="728" y="89" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ status : str</text>
+<text x="728" y="106" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ cover_message : text</text>
+<text x="728" y="123" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ applied_at : datetime</text>
+<text x="728" y="140" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ interview_date : datetime</text>
+<line x1="721" y1="153" x2="909" y2="153" stroke="#E0E0E0" stroke-width="0.8"/>
+<text x="728" y="167" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#444" font-style="italic">+ status_color() : str</text>
+<rect x="723" y="206" width="190" height="85" rx="5" fill="rgba(0,0,0,0.07)"/>
+<rect x="720" y="203" width="190" height="85" rx="5" fill="white" stroke="#CCC" stroke-width="0.9"/>
+<rect x="720" y="203" width="190" height="28" rx="5" fill="#E65100"/>
+<rect x="720" y="227" width="190" height="4" fill="#E65100"/>
+<text x="815" y="218" text-anchor="middle" dominant-baseline="central" font-family="Arial, sans-serif" font-size="11.5" font-weight="bold" fill="white">JobMatch</text>
+<text x="728" y="242" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ score : int  {0–97}</text>
+<text x="728" y="259" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ ml_delta : int</text>
+<text x="728" y="276" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ computed_at : datetime</text>
+<rect x="723" y="313" width="190" height="51" rx="5" fill="rgba(0,0,0,0.07)"/>
+<rect x="720" y="310" width="190" height="51" rx="5" fill="white" stroke="#CCC" stroke-width="0.9"/>
+<rect x="720" y="310" width="190" height="28" rx="5" fill="#E65100"/>
+<rect x="720" y="334" width="190" height="4" fill="#E65100"/>
+<text x="815" y="325" text-anchor="middle" dominant-baseline="central" font-family="Arial, sans-serif" font-size="11.5" font-weight="bold" fill="white">SavedJob</text>
+<text x="728" y="349" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ saved_at : datetime</text>
+<rect x="723" y="386" width="190" height="97" rx="5" fill="rgba(0,0,0,0.07)"/>
+<rect x="720" y="383" width="190" height="97" rx="5" fill="white" stroke="#CCC" stroke-width="0.9"/>
+<rect x="720" y="383" width="190" height="28" rx="5" fill="#E65100"/>
+<rect x="720" y="407" width="190" height="4" fill="#E65100"/>
+<text x="815" y="398" text-anchor="middle" dominant-baseline="central" font-family="Arial, sans-serif" font-size="11.5" font-weight="bold" fill="white">JobInteraction</text>
+<text x="728" y="422" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ action : str {view|like|apply|ignore}</text>
+<text x="728" y="439" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ created_at : datetime</text>
+<line x1="721" y1="452" x2="909" y2="452" stroke="#E0E0E0" stroke-width="0.8"/>
+<text x="728" y="466" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#444" font-style="italic">+ record() : JobInteraction</text>
+<rect x="963" y="53" width="190" height="148" rx="5" fill="rgba(0,0,0,0.07)"/>
+<rect x="960" y="50" width="190" height="148" rx="5" fill="white" stroke="#CCC" stroke-width="0.9"/>
+<rect x="960" y="50" width="190" height="28" rx="5" fill="#6A1B9A"/>
+<rect x="960" y="74" width="190" height="4" fill="#6A1B9A"/>
+<text x="1055" y="65" text-anchor="middle" dominant-baseline="central" font-family="Arial, sans-serif" font-size="11.5" font-weight="bold" fill="white">Notification</text>
+<text x="968" y="89" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ notif_type : str</text>
+<text x="968" y="106" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ title : str</text>
+<text x="968" y="123" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ message : text</text>
+<text x="968" y="140" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ is_read : bool</text>
+<text x="968" y="157" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ created_at : datetime</text>
+<line x1="961" y1="170" x2="1149" y2="170" stroke="#E0E0E0" stroke-width="0.8"/>
+<text x="968" y="184" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#444" font-style="italic">+ send() : Notification</text>
+<rect x="963" y="223" width="190" height="85" rx="5" fill="rgba(0,0,0,0.07)"/>
+<rect x="960" y="220" width="190" height="85" rx="5" fill="white" stroke="#CCC" stroke-width="0.9"/>
+<rect x="960" y="220" width="190" height="28" rx="5" fill="#6A1B9A"/>
+<rect x="960" y="244" width="190" height="4" fill="#6A1B9A"/>
+<text x="1055" y="235" text-anchor="middle" dominant-baseline="central" font-family="Arial, sans-serif" font-size="11.5" font-weight="bold" fill="white">Message</text>
+<text x="968" y="259" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ content : text</text>
+<text x="968" y="276" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ sent_at : datetime</text>
+<text x="968" y="293" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ is_read : bool</text>
+<rect x="963" y="330" width="190" height="102" rx="5" fill="rgba(0,0,0,0.07)"/>
+<rect x="960" y="327" width="190" height="102" rx="5" fill="white" stroke="#CCC" stroke-width="0.9"/>
+<rect x="960" y="327" width="190" height="28" rx="5" fill="#6A1B9A"/>
+<rect x="960" y="351" width="190" height="4" fill="#6A1B9A"/>
+<text x="1055" y="342" text-anchor="middle" dominant-baseline="central" font-family="Arial, sans-serif" font-size="11.5" font-weight="bold" fill="white">CVParsed</text>
+<text x="968" y="366" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ raw_text : text</text>
+<text x="968" y="383" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ skills_extracted : json</text>
+<text x="968" y="400" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ experience_years : int</text>
+<text x="968" y="417" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#1a1a1a">+ parsed_at : datetime</text>
+<rect x="1203" y="53" width="155" height="78" rx="5" fill="rgba(0,0,0,0.06)"/>
+<rect x="1200" y="50" width="155" height="78" rx="5" fill="#FAFAFA" stroke="#CCC" stroke-width="0.9"/>
+<rect x="1200" y="50" width="155" height="26" rx="5" fill="#607D8B"/>
+<rect x="1200" y="68" width="155" height="8" fill="#607D8B"/>
+<text x="1277" y="64" text-anchor="middle" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="white">«enumeration»</text>
+<text x="1277" y="72" text-anchor="middle" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="white">Role</text>
+<text x="1208" y="86" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#333">+ CANDIDAT</text>
+<text x="1208" y="102" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#333">+ RECRUTEUR</text>
+<text x="1208" y="118" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#333">+ ADMIN</text>
+<rect x="1203" y="183" width="155" height="110" rx="5" fill="rgba(0,0,0,0.06)"/>
+<rect x="1200" y="180" width="155" height="110" rx="5" fill="#FAFAFA" stroke="#CCC" stroke-width="0.9"/>
+<rect x="1200" y="180" width="155" height="26" rx="5" fill="#607D8B"/>
+<rect x="1200" y="198" width="155" height="8" fill="#607D8B"/>
+<text x="1277" y="194" text-anchor="middle" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="white">«enumeration»</text>
+<text x="1277" y="202" text-anchor="middle" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="white">AppStatus</text>
+<text x="1208" y="216" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#333">+ SENT</text>
+<text x="1208" y="232" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#333">+ VIEWED</text>
+<text x="1208" y="248" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#333">+ INTERVIEW</text>
+<text x="1208" y="264" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#333">+ ACCEPTED</text>
+<text x="1208" y="280" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#333">+ REJECTED</text>
+<rect x="1203" y="363" width="155" height="110" rx="5" fill="rgba(0,0,0,0.06)"/>
+<rect x="1200" y="360" width="155" height="110" rx="5" fill="#FAFAFA" stroke="#CCC" stroke-width="0.9"/>
+<rect x="1200" y="360" width="155" height="26" rx="5" fill="#607D8B"/>
+<rect x="1200" y="378" width="155" height="8" fill="#607D8B"/>
+<text x="1277" y="374" text-anchor="middle" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="white">«enumeration»</text>
+<text x="1277" y="382" text-anchor="middle" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="white">JobType</text>
+<text x="1208" y="396" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#333">+ CDI</text>
+<text x="1208" y="412" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#333">+ CDD</text>
+<text x="1208" y="428" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#333">+ STAGE</text>
+<text x="1208" y="444" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#333">+ FREELANCE</text>
+<text x="1208" y="460" dominant-baseline="central" font-family="Arial, sans-serif" font-size="10" fill="#333">+ ALTERNANCE</text>
+<line x1="210" y1="85" x2="240" y2="85" stroke="#1565C0" stroke-width="1.0" marker-end="url(#arr)"/>
+<rect x="209" y="73" width="32" height="12" rx="2" fill="white" fill-opacity="0.85"/>
+<text x="225" y="79" text-anchor="middle" dominant-baseline="central" font-family="Arial, sans-serif" font-size="9" fill="#666">1..1</text>
+<line x1="210" y1="306" x2="20" y2="306" stroke="#1565C0" stroke-width="1.0" marker-end="url(#arr)"/>
+<rect x="99" y="294" width="32" height="12" rx="2" fill="white" fill-opacity="0.85"/>
+<text x="115" y="300" text-anchor="middle" dominant-baseline="central" font-family="Arial, sans-serif" font-size="9" fill="#666">0..1</text>
+<line x1="210" y1="120" x2="720" y2="80" stroke="#E65100" stroke-width="1.0" marker-end="url(#arr)"/>
+<rect x="449" y="88" width="32" height="12" rx="2" fill="white" fill-opacity="0.85"/>
+<text x="465" y="94" text-anchor="middle" dominant-baseline="central" font-family="Arial, sans-serif" font-size="9" fill="#666">1..*</text>
+<line x1="210" y1="140" x2="720" y2="233" stroke="#E65100" stroke-width="1.0" marker-end="url(#arr)"/>
+<rect x="449" y="174" width="32" height="12" rx="2" fill="white" fill-opacity="0.85"/>
+<text x="465" y="180" text-anchor="middle" dominant-baseline="central" font-family="Arial, sans-serif" font-size="9" fill="#666">1..*</text>
+<line x1="210" y1="160" x2="720" y2="325" stroke="#E65100" stroke-width="1.0" marker-end="url(#arr)"/>
+<rect x="449" y="230" width="32" height="12" rx="2" fill="white" fill-opacity="0.85"/>
+<text x="465" y="236" text-anchor="middle" dominant-baseline="central" font-family="Arial, sans-serif" font-size="9" fill="#666">1..*</text>
+<line x1="210" y1="180" x2="720" y2="403" stroke="#E65100" stroke-width="1.0" marker-end="url(#arr)"/>
+<rect x="449" y="279" width="32" height="12" rx="2" fill="white" fill-opacity="0.85"/>
+<text x="465" y="285" text-anchor="middle" dominant-baseline="central" font-family="Arial, sans-serif" font-size="9" fill="#666">1..*</text>
+<line x1="210" y1="200" x2="960" y2="75" stroke="#6A1B9A" stroke-width="1.0" marker-end="url(#arr)"/>
+<rect x="569" y="125" width="32" height="12" rx="2" fill="white" fill-opacity="0.85"/>
+<text x="585" y="131" text-anchor="middle" dominant-baseline="central" font-family="Arial, sans-serif" font-size="9" fill="#666">1..*</text>
+<line x1="210" y1="461" x2="210" y2="301" stroke="#00695C" stroke-width="1.0" marker-end="url(#arr)"/>
+<rect x="194" y="369" width="32" height="12" rx="2" fill="white" fill-opacity="0.85"/>
+<text x="210" y="375" text-anchor="middle" dominant-baseline="central" font-family="Arial, sans-serif" font-size="9" fill="#666">1..*</text>
+<line x1="430" y1="252" x2="430" y2="252" stroke="#0277BD" stroke-width="1.0" marker-end="url(#arr)"/>
+<rect x="414" y="240" width="32" height="12" rx="2" fill="white" fill-opacity="0.85"/>
+<text x="430" y="246" text-anchor="middle" dominant-baseline="central" font-family="Arial, sans-serif" font-size="9" fill="#666">1..*</text>
+<line x1="430" y1="369" x2="430" y2="369" stroke="#0277BD" stroke-width="1.0" marker-end="url(#arr)"/>
+<rect x="414" y="357" width="32" height="12" rx="2" fill="white" fill-opacity="0.85"/>
+<text x="430" y="363" text-anchor="middle" dominant-baseline="central" font-family="Arial, sans-serif" font-size="9" fill="#666">1..*</text>
+<line x1="430" y1="534" x2="430" y2="534" stroke="#0277BD" stroke-width="1.0" marker-end="url(#arr)"/>
+<rect x="414" y="522" width="32" height="12" rx="2" fill="white" fill-opacity="0.85"/>
+<text x="430" y="528" text-anchor="middle" dominant-baseline="central" font-family="Arial, sans-serif" font-size="9" fill="#666">1..*</text>
+<line x1="680" y1="90" x2="720" y2="90" stroke="#2E7D32" stroke-width="1.0" marker-end="url(#arr)"/>
+<rect x="684" y="78" width="32" height="12" rx="2" fill="white" fill-opacity="0.85"/>
+<text x="700" y="84" text-anchor="middle" dominant-baseline="central" font-family="Arial, sans-serif" font-size="9" fill="#666">1..*</text>
+<line x1="680" y1="105" x2="720" y2="223" stroke="#2E7D32" stroke-width="1.0" marker-end="url(#arr)"/>
+<rect x="684" y="152" width="32" height="12" rx="2" fill="white" fill-opacity="0.85"/>
+<text x="700" y="158" text-anchor="middle" dominant-baseline="central" font-family="Arial, sans-serif" font-size="9" fill="#666">1..*</text>
+<line x1="680" y1="120" x2="720" y2="320" stroke="#2E7D32" stroke-width="1.0" marker-end="url(#arr)"/>
+<rect x="684" y="208" width="32" height="12" rx="2" fill="white" fill-opacity="0.85"/>
+<text x="700" y="214" text-anchor="middle" dominant-baseline="central" font-family="Arial, sans-serif" font-size="9" fill="#666">1..*</text>
+<line x1="580" y1="300" x2="580" y2="322" stroke="#2E7D32" stroke-width="1.0" marker-end="url(#arr)"/>
+<rect x="564" y="299" width="32" height="12" rx="2" fill="white" fill-opacity="0.85"/>
+<text x="580" y="305" text-anchor="middle" dominant-baseline="central" font-family="Arial, sans-serif" font-size="9" fill="#666">FK</text>
+<line x1="910" y1="80" x2="960" y2="235" stroke="#6A1B9A" stroke-width="1.0" marker-end="url(#arr)"/>
+<rect x="919" y="145" width="32" height="12" rx="2" fill="white" fill-opacity="0.85"/>
+<text x="935" y="151" text-anchor="middle" dominant-baseline="central" font-family="Arial, sans-serif" font-size="9" fill="#666">1..*</text>
+<line x1="430" y1="80" x2="960" y2="342" stroke="#0277BD" stroke-width="1.0" marker-end="url(#arr)"/>
+<rect x="679" y="199" width="32" height="12" rx="2" fill="white" fill-opacity="0.85"/>
+<text x="695" y="205" text-anchor="middle" dominant-baseline="central" font-family="Arial, sans-serif" font-size="9" fill="#666">0..1</text>
+<rect x="18" y="1017" width="500" height="42" rx="5" fill="#F8F9FA" stroke="#DDE" stroke-width="0.9"/>
+<line x1="28" y1="1037" x2="70" y2="1037" stroke="#888" stroke-width="1"/><polygon points="70,1034 76,1037 70,1040" fill="#888"/>
+<text x="118" y="1040" font-family="Arial, sans-serif" font-size="9.5" fill="#555">Association / navigabilité</text>
+<line x1="170" y1="1037" x2="212" y2="1037" stroke="#666" stroke-width="1"/><path d="M207,1033 L214,1037 L207,1041" fill="none" stroke="#666" stroke-width="1.2"/>
+<text x="260" y="1040" font-family="Arial, sans-serif" font-size="9.5" fill="#555">Héritage</text>
+<path d="M290,1037 L300,1033 L310,1037 L300,1041Z" fill="#888"/><line x1="310" y1="1037" x2="340" y2="1037" stroke="#888" stroke-width="1"/>
+<text x="380" y="1040" font-family="Arial, sans-serif" font-size="9.5" fill="#555">Composition</text>
+<line x1="385" y1="1037" x2="427" y2="1037" stroke="#888" stroke-width="1" stroke-dasharray="5,3"/><polygon points="427,1034 433,1037 427,1040" fill="#888"/>
+<text x="475" y="1040" font-family="Arial, sans-serif" font-size="9.5" fill="#555">Dépendance / réalisation</text>
+</svg>
