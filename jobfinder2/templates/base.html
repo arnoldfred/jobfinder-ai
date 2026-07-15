@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>{% block title %}JobFinder AI — Emplois en Côte d'Ivoire{% endblock %}</title>
+<meta name="description" content="{% block meta_desc %}Trouvez votre emploi idéal en Côte d'Ivoire et en Afrique. Offres vérifiées, matching IA, candidature en 1 clic.{% endblock %}"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,700;0,800;1,700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/static/css/main.css"/>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+{% block extra_css %}{% endblock %}
+<style>
+/* ── Nav dropdown ── */
+.nav-dropdown-wrap{position:relative;display:flex;align-items:center}
+.nav-dropdown-btn{background:none;border:none;cursor:pointer;font-family:inherit;font-size:14px;font-weight:500;color:var(--text-2);padding:6px 10px;border-radius:8px;display:flex;align-items:center;gap:2px;transition:color 0.2s,background 0.2s}
+.nav-dropdown-btn:hover{color:var(--text);background:var(--gold-bg)}
+.nav-dropdown{position:absolute;top:calc(100% + 8px);left:50%;transform:translateX(-50%);min-width:200px;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow-md);padding:6px;z-index:2000;opacity:0;visibility:hidden;transform:translateX(-50%) translateY(-6px);transition:opacity 0.15s,transform 0.15s,visibility 0.15s}
+.nav-dropdown-wrap:hover .nav-dropdown,.nav-dropdown-wrap:focus-within .nav-dropdown{opacity:1;visibility:visible;transform:translateX(-50%) translateY(0)}
+.nav-dropdown-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;font-size:14px;font-weight:500;color:var(--text-2);text-decoration:none;transition:background 0.15s,color 0.15s}
+.nav-dropdown-item:hover{background:var(--gold-bg);color:var(--text)}
+.nav-dropdown-item.active{background:var(--gold-bg);color:var(--gold-dark);font-weight:600}
+</style>
+</head>
+<body>
+
+<!-- ===== NAVIGATION ===== -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="{% url 'core:home' %}" class="nav-logo">
+      <div class="nav-logo-icon" style="background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:white;font-size:16px;display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:10px;box-shadow:0 2px 10px var(--gold-glow)"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg></div>
+      JobFinder <span>AI</span>
+    </a>
+
+    <div class="nav-links">
+      {% if user.is_authenticated %}
+        {% if user.is_staff or user.role == 'admin' %}
+          <!-- ── Nav Admin ── -->
+          <a href="{% url 'core:admin_dashboard' %}" class="nav-link {% block nadm %}{% endblock %}" style="color:var(--red);font-weight:700">
+            <i data-lucide="shield" style="width:14px;height:14px"></i> Dashboard
+          </a>
+          <a href="{% url 'core:admin_users' %}"    class="nav-link {% block naus %}{% endblock %}">Utilisateurs</a>
+          <a href="{% url 'core:admin_jobs' %}"     class="nav-link {% block naof %}{% endblock %}">Offres</a>
+          <a href="{% url 'core:admin_scraping' %}" class="nav-link {% block nasc %}{% endblock %}">Scraping</a>
+        {% elif user.is_employer %}
+          <!-- ── Nav Recruteur ── -->
+          <a href="{% url 'employers:dashboard' %}" class="nav-link {% block ne %}{% endblock %}">Mon Espace</a>
+          <a href="{% url 'employers:post_job' %}"  class="nav-link">Publier une offre</a>
+          <a href="{% url 'employers:tracking' %}"  class="nav-link">Suivi</a>
+        {% else %}
+          <!-- ── Nav Candidat ── -->
+          <a href="{% url 'core:dashboard' %}"  class="nav-link {% block nd %}{% endblock %}">Dashboard</a>
+          <a href="{% url 'jobs:list' %}"        class="nav-link {% block nj %}{% endblock %}">Offres</a>
+
+          <!-- Dropdown "Mon espace" -->
+          <div class="nav-dropdown-wrap">
+            <button class="nav-link nav-dropdown-btn" type="button">
+              Mon espace
+              <span id="mon-espace-badge" style="display:{% if app_count or saved_count %}inline-flex{% else %}none{% endif %};align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:var(--red);color:white;font-size:9px;font-weight:700;margin-left:4px">{{ app_count|add:saved_count }}</span>
+              <i data-lucide="chevron-down" style="width:13px;height:13px;margin-left:3px;opacity:0.6"></i>
+            </button>
+            <div class="nav-dropdown">
+              <a href="{% url 'applications:history' %}" onclick="clearCandBadge()" class="nav-dropdown-item {% block na %}{% endblock %}">
+                <i data-lucide="briefcase" style="width:15px;height:15px"></i>
+                Candidatures
+                <span id="cand-badge" style="display:{% if app_count %}inline-flex{% else %}none{% endif %};margin-left:auto;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--red);color:white;font-size:10px;font-weight:700">{{ app_count }}</span>
+              </a>
+              <a href="{% url 'jobs:saved' %}" onclick="clearSavedBadge()" class="nav-dropdown-item">
+                <i data-lucide="bookmark" style="width:15px;height:15px{% if saved_count %};fill:var(--gold-dark);color:var(--gold-dark){% endif %}"></i>
+                Sauvegardes
+                <span id="saved-badge" style="display:{% if saved_count %}inline-flex{% else %}none{% endif %};margin-left:auto;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--gold-dark);color:white;font-size:10px;font-weight:700">{{ saved_count }}</span>
+              </a>
+              <a href="{% url 'jobs:search_alerts' %}" class="nav-dropdown-item {% block nalt %}{% endblock %}">
+                <i data-lucide="bell" style="width:15px;height:15px"></i>
+                Alertes emploi
+              </a>
+            </div>
+          </div>
+
+          <a href="{% url 'ai_tools:tools' %}" class="nav-link nav-ai-link {% block nai %}{% endblock %}">Outils IA</a>
+        {% endif %}
+      {% endif %}
+      {% if not user.is_authenticated %}<a href="{% url 'jobs:list' %}" class="nav-link">Offres</a>{% endif %}
+    </div>
+
+    <div class="nav-actions">
+      {% if user.is_authenticated %}
+      <a href="{% url 'applications:notifications' %}" id="notif-bell" onclick="clearBell()" style="position:relative;width:38px;height:38px;border-radius:var(--r-sm);background:var(--gold-bg);border:1px solid var(--gold-border);display:flex;align-items:center;justify-content:center;color:var(--gold-dark);text-decoration:none;transition:all 0.2s" onmouseover="this.style.background='var(--gold-bg-2)'" onmouseout="this.style.background='var(--gold-bg)'">
+        <i data-lucide="bell" style="width:18px;height:18px"></i>
+        {% if unread_notifs %}<span id="notif-badge" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--red);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg)">{{ unread_notifs }}</span>{% endif %}
+      </a>
+      <!-- Avatar profil cliquable -->
+      {% if not user.is_employer %}
+      <a href="{% url 'accounts:profile' %}" style="width:38px;height:38px;border-radius:50%;overflow:hidden;border:2px solid var(--gold-border);flex-shrink:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--gold),var(--gold-dark));text-decoration:none">
+        {% if user_profile and user_profile.avatar %}
+          <img src="{{ user_profile.avatar.url }}" style="width:100%;height:100%;object-fit:cover"/>
+        {% else %}
+          <span style="font-family:'Playfair Display',serif;font-size:15px;font-weight:700;color:white">{{ user.first_name|first|upper|default:"?" }}</span>
+        {% endif %}
+      </a>
+      {% endif %}
+      {% endif %}
+      {% if user.is_authenticated %}
+        {% if user.is_staff %}
+        <a href="{% url 'core:admin_dashboard' %}" class="btn btn-secondary btn-sm" style="background:rgba(184,50,48,.08);border-color:rgba(184,50,48,.2);color:var(--red)"><i data-lucide="shield" style="width:14px;height:14px"></i> Admin</a>
+        {% endif %}
+        <a href="{% url 'accounts:logout' %}" class="btn btn-secondary btn-sm">Déconnexion</a>
+      {% else %}
+        <a href="{% url 'accounts:auth' %}"           class="btn btn-ghost btn-sm">Connexion</a>
+        <a href="{% url 'accounts:auth' %}?tab=signup" class="btn btn-primary btn-sm">Créer un compte</a>
+      {% endif %}
+    </div>
+
+    <!-- Mobile menu button -->
+    <button id="mob-btn" onclick="this.classList.toggle('is-open');document.getElementById('mob-menu').classList.toggle('open')"
+      style="background:none;border:none;cursor:pointer;padding:6px;margin-left:8px;border-radius:8px;transition:background 0.2s"
+      onmouseover="this.style.background='var(--gold-bg)'" onmouseout="this.style.background='none'">
+      <svg id="mob-icon-open" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+      </svg>
+      <svg id="mob-icon-close" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+</nav>
+
+<!-- Mobile menu -->
+<div id="mob-menu" style="display:none;position:fixed;top:76px;left:0;right:0;z-index:999;background:var(--bg);border-bottom:2px solid var(--gold-border);padding:16px;flex-direction:column;gap:4px;max-height:calc(100vh - 76px);overflow-y:auto;box-shadow:0 8px 32px rgba(160,130,40,0.12)">
+  {% if user.is_authenticated %}
+    {% if user.is_staff or user.role == 'admin' %}
+      <a href="{% url 'core:admin_dashboard' %}" class="nav-link" style="display:block;color:var(--red);font-weight:700">Dashboard Admin</a>
+      <a href="{% url 'core:admin_users' %}" class="nav-link" style="display:block">Utilisateurs</a>
+      <a href="{% url 'core:admin_jobs' %}" class="nav-link" style="display:block">Offres</a>
+      <a href="{% url 'core:admin_applications' %}" class="nav-link" style="display:block">Candidatures</a>
+      <a href="{% url 'core:admin_scraping' %}" class="nav-link" style="display:block">Scraping</a>
+    {% elif user.is_employer %}
+      <a href="{% url 'employers:dashboard' %}" class="nav-link" style="display:block">Espace Recruteur</a>
+      <a href="{% url 'employers:post_job' %}"  class="nav-link" style="display:block">Publier une offre</a>
+      <a href="{% url 'employers:tracking' %}"  class="nav-link" style="display:block">Suivi candidatures</a>
+    {% else %}
+      <a href="{% url 'core:dashboard' %}"        class="nav-link" style="display:block">Dashboard</a>
+      <a href="{% url 'jobs:list' %}"             class="nav-link" style="display:block">Offres</a>
+      <a href="{% url 'applications:history' %}"  class="nav-link" style="display:block">Candidatures{% if app_count %} ({{ app_count }}){% endif %}</a>
+      <a href="{% url 'jobs:saved' %}"            class="nav-link" style="display:block">Sauvegardes{% if saved_count %} ({{ saved_count }}){% endif %}</a>
+      <a href="{% url 'jobs:search_alerts' %}"    class="nav-link" style="display:block">Alertes emploi</a>
+      <a href="{% url 'ai_tools:tools' %}"        class="nav-link" style="display:block">Outils IA</a>
+      <a href="{% url 'accounts:profile' %}"      class="nav-link" style="display:block">Mon Profil</a>
+    {% endif %}
+    <a href="{% url 'accounts:logout' %}" class="btn btn-secondary btn-sm" style="margin-top:8px">Déconnexion</a>
+  {% else %}
+    <a href="{% url 'jobs:list' %}" class="nav-link" style="display:block">Offres</a>
+    <a href="{% url 'accounts:auth' %}"            class="btn btn-secondary btn-sm" style="margin-top:8px">Connexion</a>
+    <a href="{% url 'accounts:auth' %}?tab=signup" class="btn btn-primary btn-sm"   style="margin-top:6px">Créer un compte</a>
+  {% endif %}
+</div>
+
+<!-- ===== MESSAGES ===== -->
+{% if messages %}
+<div class="alerts-wrap">
+  {% for m in messages %}
+  <div class="alert alert-{{ m.tags }}">
+    <span>{% if m.tags == 'success' %}<i data-lucide="check" style="width:16px;height:16px;"></i>{% elif m.tags == 'error' %}✕{% else %}ℹ{% endif %}</span>
+    <span>{{ m }}</span>
+    <button class="alert-close" onclick="this.parentElement.remove()">✕</button>
+  </div>
+  {% endfor %}
+</div>
+<script>setTimeout(()=>{document.querySelectorAll('.alert').forEach(a=>{a.style.opacity='0';a.style.transform='translateX(20px)';a.style.transition='all 0.4s';setTimeout(()=>a.remove(),400)})},4500)</script>
+{% endif %}
+
+<!-- ===== CONTENT ===== -->
+<div class="page-wrap">
+  {% if messages %}
+<div class="alerts-wrap" style="position:fixed;top:82px;right:20px;z-index:8000;display:flex;flex-direction:column;gap:8px;max-width:360px">
+  {% for message in messages %}
+  <div class="alert alert-{{ message.tags }}" style="padding:12px 16px;border-radius:var(--r-sm);font-size:14px;font-weight:600;display:flex;align-items:center;gap:10px;box-shadow:var(--shadow-md);animation:slideIn 0.3s ease;
+    {% if 'success' in message.tags %}background:#F0FFF4;border:1px solid var(--green-border);color:var(--green)
+    {% elif 'error' in message.tags %}background:var(--red-bg);border:1px solid rgba(184,50,48,.2);color:var(--red)
+    {% elif 'warning' in message.tags %}background:var(--orange-bg);border:1px solid var(--orange-border);color:var(--orange)
+    {% else %}background:var(--gold-bg);border:1px solid var(--gold-border);color:var(--gold-dark){% endif %}">
+    <i data-lucide="{% if 'success' in message.tags %}check-circle{% elif 'error' in message.tags %}alert-circle{% elif 'warning' in message.tags %}alert-triangle{% else %}info{% endif %}" style="width:16px;height:16px;flex-shrink:0"></i>
+    <span style="flex:1">{{ message }}</span>
+    <button onclick="this.parentElement.remove()" style="background:none;border:none;cursor:pointer;opacity:0.6;padding:2px">
+      <i data-lucide="x" style="width:14px;height:14px"></i>
+    </button>
+  </div>
+  {% endfor %}
+</div>
+<style>
+@keyframes slideIn { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
+@keyframes slideOut { from { opacity:1; transform:translateX(0); } to { opacity:0; transform:translateX(20px); } }
+@keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(220,38,38,0.7); } 50% { box-shadow: 0 0 0 6px rgba(220,38,38,0); } }
+@keyframes bounce { 0%, 100% { transform:translateY(0); } 50% { transform:translateY(-4px); } }
+</style>
+{% endif %}
+{% block content %}{% endblock %}
+</div>
+
+<!-- ===== FOOTER ===== -->
+{% block footer %}
+<footer class="footer">
+  <div class="footer-grid">
+    <div>
+      <div class="footer-brand">JobFinder <span>AI</span></div>
+      <p class="footer-desc">La plateforme d'emploi de référence en Côte d'Ivoire. Offres vérifiées, IA de matching, candidature simplifiée.</p>
+      <div style="margin-top:20px;display:flex;gap:12px">
+        <a href="#" style="width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.6);font-size:14px;font-weight:700;transition:background 0.2s" onmouseover="this.style.background='rgba(184,150,12,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">in</a>
+        <a href="#" style="width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.6);font-size:14px;font-weight:700;transition:background 0.2s" onmouseover="this.style.background='rgba(184,150,12,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">f</a>
+      </div>
+    </div>
+    <div>
+      <div class="footer-col-title">Candidats</div>
+      <a href="{% url 'jobs:list' %}"          class="footer-link">Offres</a>
+      <a href="{% url 'ai_tools:tools' %}"     class="footer-link">Outils IA</a>
+      <a href="{% url 'accounts:profile' %}"   class="footer-link">Mon profil</a>
+      <a href="{% url 'applications:history' %}" class="footer-link">Candidatures</a>
+    </div>
+    <div>
+      <div class="footer-col-title">Recruteurs</div>
+      <a href="{% url 'employers:post_job' %}" class="footer-link">Publier une offre</a>
+      <a href="{% url 'employers:dashboard' %}" class="footer-link">Tableau de bord</a>
+      <a href="{% url 'accounts:auth' %}?tab=signup" class="footer-link">Créer un compte</a>
+    </div>
+    <div>
+      <div class="footer-col-title">Infos</div>
+      <a href="#" class="footer-link">À propos</a>
+      <a href="#" class="footer-link">Contact</a>
+      <a href="#" class="footer-link">Confidentialité</a>
+      <a href="#" class="footer-link">CGU</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div class="footer-copy">© 2025 JobFinder AI · Tous droits réservés</div>
+    <div class="footer-copy">Made with ♥ in 🇨🇮 Côte d'Ivoire</div>
+  </div>
+</footer>
+{% endblock %}
+
+<!-- ===== FLOATING AI CHAT ===== -->
+{% if user.is_authenticated and not user.is_employer %}
+<button id="fab" onclick="toggleChat()"><i data-lucide="bot" style="width:18px;height:18px;"></i></button>
+<div id="chat-panel">
+  <div class="chat-head">
+    <div class="chat-avatar av-ai" style="font-size:16px"><i data-lucide="bot" style="width:18px;height:18px;"></i></div>
+    <div class="chat-head-info">
+      <div class="name">Assistant JobFinder IA</div>
+      <div class="status"><span class="chat-online"></span> En ligne</div>
+    </div>
+    <button class="chat-close-btn" onclick="toggleChat()">✕</button>
+  </div>
+  <div id="chat-msgs" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;background:#F9F9F6;max-height:360px;min-height:240px">
+    <div class="chat-msg">
+      <div class="chat-avatar av-ai"><i data-lucide="bot" style="width:18px;height:18px;"></i></div>
+      <div class="bubble bubble-ai">Bonjour {{ user.first_name|default:"" }} ! Je suis votre assistant emploi. Je peux vous aider avec votre CV, préparer un entretien, ou analyser une offre. <i data-lucide="briefcase" style="width:18px;height:18px;"></i></div>
+    </div>
+  </div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;padding:8px 12px 0;background:white">
+    <span onclick="chatSuggest(this)" style="padding:4px 10px;border-radius:6px;background:var(--cream-2);border:1px solid var(--border);font-size:12px;font-weight:600;cursor:pointer;color:var(--text-2)">Améliore mon CV</span>
+    <span onclick="chatSuggest(this)" style="padding:4px 10px;border-radius:6px;background:var(--cream-2);border:1px solid var(--border);font-size:12px;font-weight:600;cursor:pointer;color:var(--text-2)">Prépare mon entretien</span>
+    <span onclick="chatSuggest(this)" style="padding:4px 10px;border-radius:6px;background:var(--cream-2);border:1px solid var(--border);font-size:12px;font-weight:600;cursor:pointer;color:var(--text-2)">Quel salaire demander ?</span>
+  </div>
+  <div class="chat-input-row">
+    <textarea id="chat-inp" class="chat-input" placeholder="Posez votre question…" rows="1"
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"
+      oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,80)+'px'"></textarea>
+    <button class="chat-send" onclick="sendChat()"><i data-lucide="send" style="width:16px;height:16px;"></i></button>
+  </div>
+</div>
+
+<script>
+const CSRF = '{{ csrf_token }}';
+let chatOpen = false, chatHist = [];
+const initials = '{{ user.first_name|first|upper|default:"?" }}';
+
+function toggleChat() {
+  chatOpen = !chatOpen;
+  document.getElementById('chat-panel').classList.toggle('open', chatOpen);
+  if (chatOpen) document.getElementById('chat-inp').focus();
+}
+function scrollChat() { const m=document.getElementById('chat-msgs'); m.scrollTop=m.scrollHeight; }
+function chatSuggest(el) { document.getElementById('chat-inp').value=el.textContent; sendChat(); }
+function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function fmtMd(t) { return t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br/>'); }
+
+async function sendChat() {
+  const inp = document.getElementById('chat-inp');
+  const msg = inp.value.trim(); if (!msg) return;
+  inp.value = ''; inp.style.height = 'auto';
+  const msgs = document.getElementById('chat-msgs');
+  msgs.innerHTML += `<div class="chat-msg user"><div class="chat-avatar av-user">${initials}</div><div class="bubble bubble-user">${escHtml(msg)}</div></div>`;
+  const tid = 'ty' + Date.now();
+  msgs.innerHTML += `<div class="chat-msg" id="${tid}"><div class="chat-avatar av-ai"><i data-lucide="bot" style="width:18px;height:18px;"></i></div><div class="bubble bubble-ai"><div class="typing"><span></span><span></span><span></span></div></div></div>`;
+  scrollChat();
+  chatHist.push({ role: 'user', content: msg });
+  try {
+    const r = await fetch('{% url "ai_tools:chat" %}', { method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':CSRF}, body: JSON.stringify({message:msg,history:chatHist}) });
+    const d = await r.json();
+    document.getElementById(tid).remove();
+    const reply = d.reply || 'Désolé, une erreur est survenue.';
+    msgs.innerHTML += `<div class="chat-msg"><div class="chat-avatar av-ai"><i data-lucide="bot" style="width:18px;height:18px;"></i></div><div class="bubble bubble-ai">${fmtMd(reply)}</div></div>`;
+    chatHist.push({ role: 'assistant', content: reply });
+    if (chatHist.length > 10) chatHist = chatHist.slice(-10);
+  } catch(e) {
+    document.getElementById(tid).remove();
+    msgs.innerHTML += `<div class="chat-msg"><div class="chat-avatar av-ai"><i data-lucide="bot" style="width:18px;height:18px;"></i></div><div class="bubble bubble-ai" style="color:var(--red)">Erreur réseau. Réessayez.</div></div>`;
+  }
+  scrollChat();
+}
+</script>
+{% endif %}
+
+<!-- Mobile nav JS : toggle icône hamburger ↔ X -->
+<script>
+(function(){
+  var btn = document.getElementById('mob-btn');
+  if (!btn) return;
+  btn.addEventListener('click', function() {
+    var isOpen = document.getElementById('mob-menu').classList.contains('open');
+    document.getElementById('mob-icon-open').style.display  = isOpen ? 'block' : 'none';
+    document.getElementById('mob-icon-close').style.display = isOpen ? 'none'  : 'block';
+  });
+})();
+</script>
+
+<!-- Scroll animation -->
+<script>
+const obs = new IntersectionObserver(es => es.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); }), {threshold:0.1});
+document.querySelectorAll('.fade-up').forEach(el => obs.observe(el));
+</script>
+
+{% block extra_js %}{% endblock %}
+
+<script>
+// Initialize Lucide icons after all content loads
+document.addEventListener("DOMContentLoaded", function() {
+  if (window.lucide) { lucide.createIcons(); }
+});
+if (window.lucide) { try { lucide.createIcons(); } catch(e) {} }
+
+// User type flag (true = employeur/recruteur, false = candidat)
+const IS_EMPLOYER = {% if user.is_employer %}true{% else %}false{% endif %};
+
+// Notification badge management
+const BADGE_CSRF = '{{ csrf_token }}';
+
+function clearBell() {
+  var badge = document.getElementById('notif-badge');
+  if (badge) badge.style.display = 'none';
+  // Mark all notifications as read
+  fetch('/applications/notifications/read/', {
+    method: 'POST',
+    headers: {'X-CSRFToken': BADGE_CSRF}
+  }).catch(function(err){ console.log('Error marking notifs read:', err); });
+}
+
+function _updateMonEspaceBadge() {
+  var cand  = document.getElementById('cand-badge');
+  var saved = document.getElementById('saved-badge');
+  var parent = document.getElementById('mon-espace-badge');
+  if (!parent) return;
+  var candVal  = (cand  && cand.style.display  !== 'none') ? (parseInt(cand.textContent)  || 0) : 0;
+  var savedVal = (saved && saved.style.display !== 'none') ? (parseInt(saved.textContent) || 0) : 0;
+  var total = candVal + savedVal;
+  if (total > 0) {
+    parent.textContent = total;
+    parent.style.display = 'inline-flex';
+  } else {
+    parent.style.display = 'none';
+  }
+}
+
+function clearCandBadge() {
+  var badge = document.getElementById('cand-badge');
+  if (badge) badge.style.display = 'none';
+  _updateMonEspaceBadge();
+  // La vue history marque déjà les notifs comme lues côté serveur au chargement
+  fetch('/applications/notifications/read-type/app_status/', {
+    method: 'POST',
+    headers: {'X-CSRFToken': BADGE_CSRF}
+  }).catch(function(err){ console.log('Error marking cand notifs read:', err); });
+}
+
+function clearSavedBadge() {
+  var badge = document.getElementById('saved-badge');
+  if (badge) badge.style.display = 'none';
+  _updateMonEspaceBadge();
+  // La vue saved_jobs marque déjà comme vu côté serveur au chargement
+  // Ce fetch est un backup au cas où l'utilisateur n'accède pas à la page
+  fetch('/jobs/saved/mark-seen/', {
+    method: 'POST',
+    headers: {'X-CSRFToken': BADGE_CSRF}
+  }).catch(function(err){ console.log('Error marking saved-badge read:', err); });
+}
+
+// Mise à jour des badges toutes les 3s (plus réactif pour notifications)
+setInterval(function() {
+  if (document.hidden) return;  // Ne pas appeler si l'onglet est caché
+  fetch('/applications/notifications/count/')
+    .then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(function(d){
+      // Mise à jour du badge notifications
+      var bell = document.getElementById('notif-bell');
+      if (!bell) return;
+      
+      var notif_badge = document.getElementById('notif-badge');
+      var oldCount = notif_badge ? parseInt(notif_badge.textContent) : 0;
+      
+      if (d.unread_notifs > 0) {
+        if (!notif_badge) {
+          notif_badge = document.createElement('span');
+          notif_badge.id = 'notif-badge';
+          notif_badge.style.cssText = 'position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--red);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg);z-index:999;animation:pulse 2s infinite';
+          bell.appendChild(notif_badge);
+        }
+        notif_badge.textContent = d.unread_notifs;
+        notif_badge.style.display = 'flex';
+        
+        // Nouvelle notification? Afficher toast
+        if (d.unread_notifs > oldCount) {
+          showNotificationToast(d.unread_notifs);
+        }
+      } else if (notif_badge) {
+        notif_badge.style.display = 'none';
+      }
+      
+      // Mise à jour du badge candidatures
+      var cand_badge = document.getElementById('cand-badge');
+      if (cand_badge) {
+        var oldAppCount = parseInt(cand_badge.textContent) || 0;
+        if (d.app_count > 0) {
+          cand_badge.textContent = d.app_count;
+          if (cand_badge.style.display === 'none' || d.app_count > oldAppCount) {
+            cand_badge.style.animation = 'none';
+            setTimeout(function() {
+              cand_badge.style.animation = 'pulse 2s infinite';
+            }, 10);
+            // Toast pour les candidats quand nouveau statut
+            if (!IS_EMPLOYER) {
+              showCandidateStatusToast(d.app_count, d.last_notif);
+            }
+          }
+          cand_badge.style.display = 'inline-flex';
+        } else {
+          cand_badge.style.display = 'none';
+        }
+        _updateMonEspaceBadge();
+      }
+    })
+    .catch(function(err){
+      console.log('Badge update error:', err);
+    });
+}, 3000);
+
+function showNotificationToast(count) {
+  // Afficher un toast subtil indiquant une nouvelle notification
+  var existing = document.getElementById('notif-toast');
+  if (existing) existing.remove();
+  
+  var toast = document.createElement('div');
+  toast.id = 'notif-toast';
+  toast.style.cssText = 'position:fixed;bottom:24px;left:24px;background:linear-gradient(135deg,var(--red),#dc2626);color:white;padding:16px 20px;border-radius:12px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:12px;box-shadow:0 8px 24px rgba(0,0,0,0.15);z-index:10000;animation:slideIn 0.3s ease;cursor:pointer';
+  toast.innerHTML = '<i data-lucide="bell" style="width:18px;height:18px;flex-shrink:0"></i><span>' + count + ' notification' + (count > 1 ? 's' : '') + ' non lue' + (count > 1 ? 's' : '') + '</span>';
+  toast.onclick = function() {
+    window.location.href = '/applications/notifications/';
+  };
+  document.body.appendChild(toast);
+  if(window.lucide) lucide.createIcons();
+  
+  // Auto-hide après 5s
+  setTimeout(function() {
+    if (toast.parentNode) {
+      toast.style.animation = 'slideOut 0.3s ease';
+      setTimeout(function() {
+        if (toast.parentNode) toast.remove();
+      }, 300);
+    }
+  }, 5000);
+}
+
+function showCandidateStatusToast(count, lastNotif) {
+  // Toast personnalisé pour les candidats quand statut change
+  lastNotif = lastNotif || {};
+  
+  var existing = document.getElementById('candidate-status-toast');
+  if (existing) {
+    existing.style.animation = 'none';
+    setTimeout(function() { existing.style.animation = 'pulse 0.5s ease'; }, 10);
+    var msg = lastNotif.title ? enrichTitle(lastNotif.title) : (count + (count > 1 ? ' mises à jour' : ' mise à jour'));
+    existing.querySelector('span').textContent = msg;
+    return;
+  }
+  
+  // Play notification sound if available
+  try {
+    var audio = new Audio('data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEAQB8AAAB9AAACABAAZGF0YQIAAAAAAA==');
+    audio.play().catch(function(e){});
+  } catch(e) {}
+  
+  // Message personnalisé selon la notification
+  var toastMsg = lastNotif.title ? enrichTitle(lastNotif.title) : (count + (count > 1 ? ' mises à jour' : ' mise à jour'));
+  var toastIcon = 'check-circle';
+  var toastColor = '#22c55e';
+  var toastBorder = '#dcfce7';
+  
+  // Ajuster couleur et icône selon le type de statut
+  var titleLower = (lastNotif.title || '').toLowerCase();
+  if (titleLower.includes('entretien') || titleLower.includes('planifié')) {
+    toastColor = '#f59e0b';
+    toastBorder = '#fef3c7';
+    toastIcon = 'calendar';
+  } else if (titleLower.includes('offre')) {
+    toastColor = '#8b5cf6';
+    toastBorder = '#ede9fe';
+    toastIcon = 'gift';
+  } else if (titleLower.includes('refus') || titleLower.includes('non retenue')) {
+    toastColor = '#ef4444';
+    toastBorder = '#fee2e2';
+    toastIcon = 'alert-circle';
+  }
+  
+  var toast = document.createElement('div');
+  toast.id = 'candidate-status-toast';
+  toast.style.cssText = 'position:fixed;bottom:24px;left:24px;background:linear-gradient(135deg,' + toastColor + ',rgba(0,0,0,0.1));color:white;padding:16px 20px;border-radius:12px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:12px;box-shadow:0 8px 24px rgba(0,0,0,0.15);z-index:10000;animation:slideIn 0.3s ease;cursor:pointer;border-left:4px solid ' + toastBorder;
+  toast.innerHTML = '<i data-lucide="' + toastIcon + '" style="width:18px;height:18px;flex-shrink:0;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.2))"></i><span style="flex:1">' + toastMsg + '</span><i data-lucide="arrow-right" style="width:16px;height:16px;flex-shrink:0;opacity:0.7"></i>';
+  toast.onclick = function() {
+    window.location.href = '/applications/history/';
+  };
+  document.body.appendChild(toast);
+  if(window.lucide) lucide.createIcons();
+  
+  // Auto-hide après 6s
+  setTimeout(function() {
+    if (toast.parentNode) {
+      toast.style.animation = 'slideOut 0.3s ease';
+      setTimeout(function() {
+        if (toast.parentNode) toast.remove();
+      }, 300);
+    }
+  }, 6000);
+}
+
+// Enrichir le titre avec emojis côté front-end
+function enrichTitle(title) {
+  if (!title) return '';
+  var lc = title.toLowerCase();
+  if (lc.includes('entretien')) return '📅 ' + title;
+  if (lc.includes('offre')) return '🎁 ' + title;
+  if (lc.includes('acceptée') || lc.includes('accepte')) return '✅ ' + title;
+  if (lc.includes('refus') || lc.includes('non retenue')) return '❌ ' + title;
+  if (lc.includes('consultée') || lc.includes('consultee')) return '👁️ ' + title;
+  if (lc.includes('examen')) return '⏳ ' + title;
+  return '💼 ' + title;
+}
+</script>
+</body>
+</html>

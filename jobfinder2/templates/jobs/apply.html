@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% load tags %}
+{% block title %}Postuler — {{ job.title }} — JobFinder AI{% endblock %}
+{% block nj %}active{% endblock %}
+
+{% block content %}
+<div class="page-inner">
+  <a href="{% url 'jobs:detail' job.pk %}" style="display:inline-flex;align-items:center;gap:6px;font-size:15px;font-weight:600;color:var(--text-3);margin-bottom:24px;text-decoration:none;transition:color 0.2s" onmouseover="this.style.color='var(--gold-dark)'" onmouseout="this.style.color='var(--text-3)'">
+    <i data-lucide="arrow-left" style="width:16px;height:16px"></i> Retour à l'offre
+  </a>
+
+  <div style="max-width:700px;background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);padding:32px;margin:0 auto">
+    
+    <!-- En-tête -->
+    <div style="margin-bottom:32px">
+      <h1 style="font-family:'Playfair Display',serif;font-size:28px;font-weight:700;margin-bottom:12px">Postuler à cette offre</h1>
+      <p style="color:var(--text-2);font-size:15px">{{ job.title }} chez <strong>{{ job.company }}</strong></p>
+      <div style="margin-top:12px;padding:12px;background:var(--cream-2);border-left:3px solid var(--gold);border-radius:6px;font-size:14px;color:var(--text-2)">
+        <strong>📍 {{ job.location }}</strong> • {{ job.get_job_type_display }}
+      </div>
+    </div>
+
+    <form method="post" style="display:grid;gap:20px">
+      {% csrf_token %}
+
+      <!-- Message de candidature -->
+      <div>
+        <label style="display:block;font-weight:700;margin-bottom:8px;font-size:15px">Message de candidature (optionnel)</label>
+        <textarea name="cover_message" placeholder="Présentez-vous brièvement et expliquez pourquoi vous êtes intéressé par cette offre..." style="width:100%;height:120px;padding:12px;border:1px solid var(--border);border-radius:var(--r-sm);font-family:inherit;font-size:14px;resize:none" class="form-input"></textarea>
+        <div style="font-size:12px;color:var(--text-3);margin-top:6px">Vous pouvez ajouter votre CV depuis votre profil</div>
+      </div>
+
+      <!-- Profil -->
+      <div style="background:var(--cream-2);border:1px solid var(--border);border-radius:var(--r-sm);padding:16px">
+        <div style="font-weight:700;margin-bottom:12px;font-size:14px">Votre profil</div>
+        <div style="display:grid;gap:8px;font-size:13px">
+          <div><strong>Nom:</strong> {{ user.first_name }} {{ user.last_name }}</div>
+          <div><strong>Email:</strong> {{ user.email }}</div>
+          {% if user.profile.phone %}
+          <div><strong>Téléphone:</strong> {{ user.profile.phone }}</div>
+          {% endif %}
+        </div>
+        <a href="{% url 'accounts:profile' %}" style="display:inline-block;margin-top:12px;color:var(--gold);font-weight:600;font-size:13px;text-decoration:none">Modifier mon profil →</a>
+      </div>
+
+      <!-- Boutons -->
+      <div style="display:flex;gap:12px;padding-top:8px;border-top:1px solid var(--border)">
+        <button type="submit" class="btn btn-primary btn-full">
+          <i data-lucide="send" style="width:18px;height:18px;margin-right:8px;display:inline"></i> Soumettre ma candidature
+        </button>
+        <a href="{% url 'jobs:detail' job.pk %}" class="btn btn-secondary btn-full" style="text-decoration:none;display:flex;align-items:center;justify-content:center">
+          <i data-lucide="x" style="width:18px;height:18px;margin-right:8px;display:inline"></i> Annuler
+        </a>
+      </div>
+
+    </form>
+  </div>
+
+</div>
+
+<script>document.addEventListener('DOMContentLoaded',function(){document.querySelectorAll('[data-lucide]').forEach(e=>{lucide.createIcons()})});</script>
+{% endblock %}

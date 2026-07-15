@@ -1,0 +1,1829 @@
+{% extends 'base.html' %}
+{% block title %}Outils IA — JobFinder AI{% endblock %}
+{% block nai %}active{% endblock %}
+
+{% block content %}
+<div class="page-inner">
+  <div style="margin-bottom:28px">
+    <div style="display:inline-flex;align-items:center;gap:6px;background:var(--gold-bg);border:1px solid var(--gold-border);padding:6px 14px;border-radius:50px;font-size:13px;font-weight:700;color:var(--gold);margin-bottom:12px"><i data-lucide="bot" style="width:18px;height:18px;"></i> Alimenté par Groq IA (gratuit)</div>
+    <h1 class="h1">Outils IA pour votre carrière</h1>
+    <p class="body" style="color:var(--text-2);margin-top:8px">6 assistants spécialisés pour maximiser vos chances d'être recruté</p>
+  </div>
+
+  <!-- NAV OUTILS -->
+  <div class="tabs-nav" style="margin-bottom:28px;flex-wrap:wrap">
+    <button class="tabs-btn active" id="pill-cv"        onclick="showTool('cv',this)"><i data-lucide="bar-chart-2" style="width:18px;height:18px;"></i> Analyser CV</button>
+    <button class="tabs-btn"        id="pill-interview"  onclick="showTool('interview',this)">🎤 Coach Entretien</button>
+    <button class="tabs-btn"        id="pill-salary"     onclick="showTool('salary',this)"><i data-lucide="banknote" style="width:18px;height:18px;"></i> Salaire</button>
+    <button class="tabs-btn"        id="pill-job"        onclick="showTool('job',this)"><i data-lucide="search" style="width:16px;height:16px;"></i> Analyser Offre</button>
+    <button class="tabs-btn"        id="pill-email"      onclick="showTool('email',this)"><i data-lucide="mail" style="width:18px;height:18px;"></i> Email</button>
+    <button class="tabs-btn"        id="pill-career"     onclick="showTool('career',this)"><i data-lucide="map" style="width:18px;height:18px;"></i> Carrière</button>
+    <button class="tabs-btn"        id="pill-docs"       onclick="showTool('docs',this)"><i data-lucide="file-plus" style="width:18px;height:18px;"></i> Préparer documents</button>
+  </div>
+
+  <!-- ===== ANALYSEUR CV ===== -->
+  <div id="tool-cv" class="tool-panel">
+    <div class="grid-2">
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden">
+        <div style="background:var(--gold-bg);border-bottom:1px solid var(--gold-border);padding:22px 26px;display:flex;gap:14px;align-items:center">
+          <div style="width:46px;height:46px;border-radius:12px;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:20px"><i data-lucide="bar-chart-2" style="width:18px;height:18px;"></i></div>
+          <div>
+            <div style="font-size:18px;font-weight:700">Analyseur de CV</div>
+            <div style="font-size:14px;color:var(--text-3)">Score ATS · Points forts · Recommandations</div>
+          </div>
+        </div>
+        <div style="padding:26px">
+          <!-- Import / Mon CV enregistré -->
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+            <label class="btn btn-secondary btn-sm" style="cursor:pointer;gap:6px">
+              <i data-lucide="upload" style="width:14px;height:14px"></i> Importer PDF/DOCX
+              <input type="file" id="cv-file-input" accept=".pdf,.docx" style="display:none" onchange="loadCVFileToAnalyzer(this)"/>
+            </label>
+            {% if has_cv %}
+            <button type="button" class="btn btn-secondary btn-sm" onclick="useProfileCVForAnalysis()">
+              <i data-lucide="file-text" style="width:14px;height:14px"></i> Mon CV enregistré
+            </button>
+            {% endif %}
+          </div>
+          <div id="cv-load-status" style="display:none;margin-bottom:10px;font-size:13px;color:var(--green);font-weight:600"></div>
+          <div class="form-group">
+            <label class="form-label">Contenu de votre CV <span style="color:var(--text-3);font-weight:400">— ou importez ci-dessus</span></label>
+            <textarea class="form-input" id="cv-text" rows="8" placeholder="Collez le texte de votre CV ici…"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Poste ciblé (optionnel)</label>
+            <input class="form-input" id="cv-target" placeholder="ex: Développeur Python Senior CI"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Description du poste (optionnel)</label>
+            <textarea class="form-input" id="cv-job-desc" rows="3" placeholder="Collez la description du poste pour une analyse plus précise…"></textarea>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="runCVAnalysis()"><i data-lucide="scan-line" style="width:17px;height:17px"></i> Analyser mon CV</button>
+        </div>
+      </div>
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden">
+        <div style="background:var(--cream-2);border-bottom:1px solid var(--border);padding:22px 26px">
+          <div style="font-size:18px;font-weight:700">Résultats</div>
+        </div>
+        <div style="padding:26px">
+          <div id="cv-scores" style="display:none;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px"></div>
+          <div class="ai-box" id="cv-out"><span style="color:var(--text-3);font-style:italic">L'analyse apparaîtra ici…</span></div>
+          <div style="margin-top:12px;display:flex;gap:8px">
+            <button class="btn btn-secondary btn-sm" onclick="copyAIOut('cv-out', this)"><i data-lucide="copy" style="width:14px;height:14px"></i> Copier</button>
+            <button class="btn btn-secondary btn-sm" onclick="downloadPDF('cv-out','Analyse CV')"><i data-lucide="file-text" style="width:14px;height:14px"></i> PDF</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== COACH ENTRETIEN ===== -->
+  <div id="tool-interview" class="tool-panel" style="display:none">
+
+    <!-- PHASE 1: Setup -->
+    <div id="int-setup" class="card card-p" style="max-width:540px;margin:0 auto">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:22px">
+        <div style="width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,var(--gold),var(--gold-dark));display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 3px 12px var(--gold-glow)">
+          <i data-lucide="mic" style="width:22px;height:22px;color:white"></i>
+        </div>
+        <div>
+          <div style="font-size:18px;font-weight:700">Simulation d'entretien</div>
+          <div style="font-size:14px;color:var(--text-3)">Questions progressives · Évaluation IA · Score final</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Poste visé</label>
+        <input class="form-input" id="int-job" placeholder="ex: Développeur Backend Python, Responsable Marketing CI…"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description du poste (optionnel)</label>
+        <textarea class="form-input" id="int-job-desc" rows="3" placeholder="Copiez la description pour des questions ultra-ciblées…"></textarea>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px">
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Niveau</label>
+          <select class="form-input" id="int-level">
+            <option value="Junior">Junior (0–2 ans)</option>
+            <option value="Mid-Senior" selected>Confirmé (3–6 ans)</option>
+            <option value="Senior">Senior (7+ ans)</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Type de questions</label>
+          <select class="form-input" id="int-type">
+            <option value="Toutes">Mélange (recommandé)</option>
+            <option value="Comportementales">Comportementales</option>
+            <option value="Techniques">Techniques</option>
+            <option value="Motivation">Motivation & Fit</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
+        <label style="border:2px solid var(--border-2);border-radius:10px;padding:12px 14px;cursor:pointer;text-align:center;transition:all 0.2s" id="opt-5" onclick="setNbQ(5,this)">
+          <div style="font-size:20px;font-weight:700">5</div>
+          <div style="font-size:12px;color:var(--text-3)">questions rapide</div>
+        </label>
+        <label style="border:2px solid var(--gold);background:var(--gold-bg);border-radius:10px;padding:12px 14px;cursor:pointer;text-align:center;transition:all 0.2s" id="opt-8" onclick="setNbQ(8,this)">
+          <div style="font-size:20px;font-weight:700;color:var(--gold-dark)">8</div>
+          <div style="font-size:12px;color:var(--text-3)">questions complet</div>
+        </label>
+      </div>
+      <button class="btn btn-primary btn-full" style="font-size:16px;padding:15px" onclick="startInterview()" id="int-start-btn">
+        <i data-lucide="play" style="width:17px;height:17px"></i> Démarrer l’entretien
+      </button>
+    </div>
+
+    <!-- PHASE 2: Quiz en cours -->
+    <div id="int-quiz" style="display:none;max-width:680px;margin:0 auto">
+
+      <!-- Barre de progression -->
+      <div style="margin-bottom:24px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <span style="font-size:14px;font-weight:700;color:var(--text-2)">Question <span id="int-q-num">1</span> sur <span id="int-q-total">8</span></span>
+          <span id="int-score-live" style="font-size:14px;font-weight:700;color:var(--gold-dark)">Score: 0/0</span>
+        </div>
+        <div style="height:8px;background:var(--border);border-radius:50px;overflow:hidden">
+          <div id="int-progress-bar" style="height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-dark));border-radius:50px;width:0%;transition:width 0.5s ease"></div>
+        </div>
+        <!-- Indicateurs questions -->
+        <div id="int-dots" style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"></div>
+      </div>
+
+      <!-- Carte question -->
+      <div class="card" style="margin-bottom:18px;overflow:hidden">
+        <div style="background:linear-gradient(135deg,var(--gold-bg),rgba(255,248,215,.95));border-bottom:1px solid var(--gold-border);padding:20px 24px">
+          <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--gold-dark);margin-bottom:8px;display:flex;align-items:center;gap:6px">
+            <i data-lucide="help-circle" style="width:14px;height:14px"></i>
+            <span id="int-q-type-label">Question comportementale</span>
+          </div>
+          <div id="int-question-text" style="font-size:17px;font-weight:700;color:var(--text);line-height:1.6"></div>
+        </div>
+        <!-- Conseil STAR -->
+        <div style="padding:14px 24px;background:rgba(255,255,255,0.7);border-bottom:1px solid var(--border);font-size:13px;color:var(--text-3)">
+          <i data-lucide="lightbulb" style="width:13px;height:13px;color:var(--gold-dark)"></i>
+          Méthode STAR : <strong>Situation</strong> → <strong>Tâche</strong> → <strong>Action</strong> → <strong>Résultat</strong>
+        </div>
+        <div style="padding:20px 24px">
+          <label class="form-label">Votre réponse</label>
+          <textarea id="int-answer-area" class="form-input" rows="6"
+            placeholder="Décrivez une situation concrète de votre expérience…"
+            onkeydown="if(event.ctrlKey&&event.key==='Enter')submitAnswer()"></textarea>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">
+            <span style="font-size:12px;color:var(--text-3)">Ctrl+Entrée pour valider</span>
+            <button class="btn btn-primary" onclick="submitAnswer()" id="int-submit-btn">
+              <i data-lucide="send" style="width:15px;height:15px"></i> Valider ma réponse
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Zone évaluation IA -->
+      <div id="int-eval-zone" style="display:none">
+        <!-- Loading -->
+        <div id="int-eval-loading" style="padding:28px;text-align:center">
+          <div class="dot-3" style="margin:0 auto 12px"><span></span><span></span><span></span></div>
+          <div style="font-size:14px;color:var(--text-3)">L'IA évalue votre réponse…</div>
+        </div>
+
+        <!-- Résultat évaluation -->
+        <div id="int-eval-result" style="display:none" class="card" style="overflow:hidden">
+          <div id="int-eval-header" style="padding:18px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px">
+            <!-- Score ring -->
+            <div id="int-score-ring" style="flex-shrink:0"></div>
+            <div style="flex:1">
+              <div id="int-score-label" style="font-size:16px;font-weight:700"></div>
+              <div id="int-score-tip" style="font-size:13px;color:var(--text-3);margin-top:2px"></div>
+            </div>
+          </div>
+          <div style="padding:20px 24px">
+            <!-- Points forts -->
+            <div style="margin-bottom:14px">
+              <div style="font-size:13px;font-weight:700;color:var(--green);display:flex;align-items:center;gap:6px;margin-bottom:8px">
+                <i data-lucide="check-circle" style="width:14px;height:14px"></i> Points forts
+              </div>
+              <div id="int-strengths"></div>
+            </div>
+            <!-- À améliorer -->
+            <div style="margin-bottom:14px" id="int-improvements-section">
+              <div style="font-size:13px;font-weight:700;color:var(--orange);display:flex;align-items:center;gap:6px;margin-bottom:8px">
+                <i data-lucide="arrow-up-circle" style="width:14px;height:14px"></i> À améliorer
+              </div>
+              <div id="int-improvements"></div>
+            </div>
+            <!-- Version améliorée (toggle) -->
+            <div style="margin-bottom:16px">
+              <button onclick="toggleBetterAnswer()" style="font-size:13px;font-weight:600;color:var(--gold-dark);background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:5px;padding:0">
+                <i data-lucide="sparkles" style="width:14px;height:14px"></i> Voir la réponse modèle <i data-lucide="chevron-down" id="int-chevron" style="width:14px;height:14px"></i>
+              </button>
+              <div id="int-better-answer" style="display:none;margin-top:10px;padding:14px;background:rgba(255,252,235,0.8);border:1px solid var(--gold-border);border-radius:10px;font-size:14px;line-height:1.7;color:var(--text-2)"></div>
+            </div>
+            <!-- Bouton suivant -->
+            <div style="display:flex;justify-content:flex-end">
+              <button id="int-next-btn" onclick="nextQuestion()" class="btn btn-primary">
+                Question suivante <i data-lucide="arrow-right" style="width:15px;height:15px"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PHASE 3: Résultats finaux -->
+    <div id="int-results" style="display:none;max-width:580px;margin:0 auto">
+      <div class="card card-p" style="text-align:center;margin-bottom:20px">
+        <div id="int-final-ring" style="margin:0 auto 16px"></div>
+        <div style="font-family:'Playfair Display',serif;font-size:24px;font-weight:700;margin-bottom:8px">Entretien terminé !</div>
+        <div id="int-final-comment" style="font-size:16px;color:var(--text-2);margin-bottom:20px"></div>
+        <div style="display:flex;gap:12px;justify-content:center">
+          <button class="btn btn-secondary" onclick="restartInterview()">
+            <i data-lucide="refresh-cw" style="width:15px;height:15px"></i> Recommencer
+          </button>
+          <button class="btn btn-primary" onclick="downloadInterviewPDF()">
+            <i data-lucide="download" style="width:15px;height:15px"></i> Bilan complet PDF
+          </button>
+        </div>
+      </div>
+      <div id="int-results-detail" class="card card-p">
+        <div style="font-size:16px;font-weight:700;margin-bottom:16px">Détail par question</div>
+        <div id="int-results-list"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== SALAIRE ===== -->
+  <div id="tool-salary" class="tool-panel" style="display:none">
+    <div class="grid-2">
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden">
+        <div style="background:var(--gold-bg);border-bottom:1px solid var(--gold-border);padding:20px 24px;display:flex;gap:12px;align-items:center">
+          <div style="width:40px;height:40px;border-radius:10px;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:18px"><i data-lucide="banknote" style="width:18px;height:18px;"></i></div>
+          <div style="font-size:17px;font-weight:700">Conseil Salaire IA</div>
+        </div>
+        <div style="padding:24px">
+          <div class="form-group">
+            <label class="form-label">Poste</label>
+            <input class="form-input" id="sal-job" value="Développeur Python Senior"/>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+            <div class="form-group" style="margin:0">
+              <label class="form-label">Expérience (ans)</label>
+              <input class="form-input" id="sal-exp" type="number" value="5" min="0"/>
+            </div>
+            <div class="form-group" style="margin:0">
+              <label class="form-label">Marché</label>
+              <select class="form-input" id="sal-country">
+                <option>Côte d'Ivoire</option>
+                <option>Sénégal</option>
+                <option>Nigeria</option>
+                <option>Ghana</option>
+                <option>Afrique du Sud</option>
+                <option>France</option>
+                <option>Remote International</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Offre reçue (optionnel)</label>
+            <input class="form-input" id="sal-offer" placeholder="ex: 400 000 FCFA/mois"/>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="runSalary()">Analyser</button>
+        </div>
+      </div>
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden">
+        <div style="padding:20px 24px;border-bottom:1px solid var(--border);font-size:17px;font-weight:700">Analyse & Scripts de négociation</div>
+        <div style="padding:24px">
+          <div class="ai-box" id="sal-out"><span style="color:var(--text-3);font-style:italic">L'analyse salariale apparaîtra ici…</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ANALYSER OFFRE ===== -->
+  <div id="tool-job" class="tool-panel" style="display:none">
+    <div class="grid-2">
+      <!-- Formulaire -->
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden">
+        <div style="background:var(--gold-bg);border-bottom:1px solid var(--gold-border);padding:20px 24px;display:flex;gap:12px;align-items:center">
+          <div style="width:40px;height:40px;border-radius:10px;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:18px"><i data-lucide="search" style="width:16px;height:16px;"></i></div>
+          <div style="font-size:17px;font-weight:700">Analyser une Offre</div>
+        </div>
+        <div style="padding:24px">
+          <div class="form-group">
+            <label class="form-label">Collez la description du poste</label>
+            <textarea class="form-input" id="jd-text" rows="13" placeholder="Collez ici la description complète de l'offre…"></textarea>
+          </div>
+          <button class="btn btn-primary btn-full" id="btn-jd-analyze" onclick="runJobAnalysis()">
+            <i data-lucide="search" style="width:16px;height:16px"></i> Analyser
+          </button>
+        </div>
+      </div>
+
+      <!-- Rapport -->
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden">
+        <div style="padding:20px 24px;border-bottom:1px solid var(--border)">
+          <div id="jd-score-wrap" style="display:none;margin-bottom:12px">
+            <div style="display:inline-flex;align-items:center;gap:10px;background:var(--gold-bg);border:2px solid var(--gold-border);padding:10px 20px;border-radius:50px">
+              <span style="font-size:16px"><i data-lucide="target" style="width:18px;height:18px;"></i></span>
+              <span style="font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:var(--gold)" id="jd-score">—</span>
+              <span style="font-size:14px;font-weight:600">Compatibilité</span>
+            </div>
+          </div>
+          <div style="font-size:17px;font-weight:700">Rapport de compatibilité</div>
+        </div>
+        <div style="padding:24px">
+          <div class="ai-box" id="jd-out"><span style="color:var(--text-3);font-style:italic">Le rapport apparaîtra ici…</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Documents adaptés — visible après analyse ── -->
+    <div id="jd-docs-section" style="display:none;margin-top:20px">
+      <div class="card card-gold card-p">
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px">
+          <div style="width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,var(--gold),var(--gold-dark));display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 3px 10px var(--gold-glow)">
+            <i data-lucide="sparkles" style="width:20px;height:20px;color:white"></i>
+          </div>
+          <div>
+            <div style="font-size:18px;font-weight:700">Documents adaptés à ce poste</div>
+            <div style="font-size:13px;color:var(--text-3)">Générés à partir de votre profil réel + mots-clés de l'offre</div>
+          </div>
+        </div>
+
+        <!-- Boutons -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px">
+          <button class="btn btn-primary" id="jd-btn-cv" onclick="generateDocFromJD('cv')">
+            <i data-lucide="file-text" style="width:17px;height:17px"></i> Adapter mon CV
+          </button>
+          <button class="btn btn-secondary" id="jd-btn-letter" onclick="generateDocFromJD('cover_letter')">
+            <i data-lucide="mail" style="width:17px;height:17px"></i> Lettre de motivation
+          </button>
+          <button class="btn btn-secondary" id="jd-btn-email" onclick="generateDocFromJD('email')">
+            <i data-lucide="send" style="width:17px;height:17px"></i> Email de candidature
+          </button>
+        </div>
+
+        <!-- Zone résultat -->
+        <div id="jd-doc-result" style="display:none">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+            <span id="jd-doc-title" style="font-size:15px;font-weight:700;color:var(--gold-dark)"></span>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-primary btn-sm" onclick="copyJdDoc(this)">
+                <i data-lucide="copy" style="width:13px;height:13px"></i> Copier
+              </button>
+              <button class="btn btn-secondary btn-sm" id="jd-btn-pdf" onclick="downloadJdDoc('pdf')">
+                <i data-lucide="file-text" style="width:13px;height:13px"></i> PDF
+              </button>
+              <button class="btn btn-secondary btn-sm" id="jd-btn-docx" onclick="downloadJdDoc('docx')">
+                <i data-lucide="file" style="width:13px;height:13px"></i> DOCX
+              </button>
+              <button class="btn btn-secondary btn-sm" onclick="document.getElementById('jd-doc-result').style.display='none'">✕</button>
+            </div>
+          </div>
+          <div id="jd-doc-text" class="ai-box" style="max-height:340px;overflow-y:auto;white-space:pre-wrap"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== EMAIL ===== -->
+  <div id="tool-email" class="tool-panel" style="display:none">
+    <div class="grid-2">
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden">
+        <div style="background:var(--gold-bg);border-bottom:1px solid var(--gold-border);padding:20px 24px;display:flex;gap:12px;align-items:center">
+          <div style="width:40px;height:40px;border-radius:10px;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:18px"><i data-lucide="mail" style="width:18px;height:18px;"></i></div>
+          <div style="font-size:17px;font-weight:700">Rédacteur d'Email</div>
+        </div>
+        <div style="padding:24px">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px">
+            <button class="btn btn-primary btn-sm"   data-type="followup"    onclick="setEmailType(this)"><i data-lucide="mail-open" style="width:16px;height:16px;"></i> Relance</button>
+            <button class="btn btn-secondary btn-sm" data-type="spontaneous" onclick="setEmailType(this)"><i data-lucide="briefcase" style="width:18px;height:18px;"></i> Spontanée</button>
+            <button class="btn btn-secondary btn-sm" data-type="thanks"      onclick="setEmailType(this)"><i data-lucide="hands" style="width:16px;height:16px;"></i> Remerciement</button>
+            <button class="btn btn-secondary btn-sm" data-type="decline"     onclick="setEmailType(this)"><i data-lucide="ban" style="width:16px;height:16px;"></i> Refus poli</button>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Destinataire</label>
+            <input class="form-input" id="em-recip" placeholder="Nom, titre, entreprise"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Poste concerné</label>
+            <input class="form-input" id="em-pos" placeholder="Développeur Backend Python"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Contexte (optionnel)</label>
+            <textarea class="form-input" id="em-ctx" rows="3" placeholder="Entretien le 15 mars, recommandation de M. Konan…"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Ton</label>
+            <select class="form-input" id="em-tone">
+              <option>Professionnel & chaleureux</option>
+              <option>Formel & concis</option>
+              <option>Confiant & assertif</option>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="runEmail()">Rédiger l'email</button>
+        </div>
+      </div>
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;position:sticky;top:88px">
+        <div style="padding:20px 24px;border-bottom:1px solid var(--border);font-size:17px;font-weight:700">Email généré</div>
+        <div style="padding:24px">
+          <div class="ai-box" id="em-out" style="min-height:300px;white-space:pre-wrap;font-family:monospace;font-size:13px;line-height:1.8"><span style="color:var(--text-3);font-style:italic">Votre email personnalisé apparaîtra ici…</span></div>
+          <div id="em-actions" style="display:none;margin-top:14px;flex-direction:column;gap:10px">
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-primary btn-sm" id="em-btn-copy" onclick="copyEmailText(this)"><i data-lucide="copy" style="width:14px;height:14px"></i> Copier</button>
+              <button class="btn btn-secondary btn-sm" onclick="runEmail()"><i data-lucide="refresh-cw" style="width:14px;height:14px"></i> Régénérer</button>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;padding-top:10px;border-top:1px solid var(--border)">
+              <span style="font-size:12px;font-weight:600;color:var(--text-3);align-self:center;margin-right:4px">Télécharger :</span>
+              <button class="btn btn-secondary btn-sm" onclick="downloadEmailPDF()" id="em-btn-pdf">
+                <i data-lucide="file-text" style="width:14px;height:14px"></i> PDF
+              </button>
+              <button class="btn btn-secondary btn-sm" onclick="downloadEmailDocx()" id="em-btn-docx">
+                <i data-lucide="file" style="width:14px;height:14px"></i> DOCX
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== CARRIÈRE ===== -->
+  <div id="tool-career" class="tool-panel" style="display:none">
+    <div class="grid-2">
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden">
+        <div style="background:var(--gold-bg);border-bottom:1px solid var(--gold-border);padding:20px 24px;display:flex;gap:12px;align-items:center">
+          <div style="width:40px;height:40px;border-radius:10px;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:18px"><i data-lucide="map" style="width:18px;height:18px;"></i></div>
+          <div style="font-size:17px;font-weight:700">Plan de Carrière IA</div>
+        </div>
+        <div style="padding:24px">
+          <div class="form-group">
+            <label class="form-label">Situation actuelle</label>
+            <input class="form-input" id="cp-cur" placeholder="ex: Développeur junior Python, 2 ans d'expérience"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Objectif dans 5 ans</label>
+            <input class="form-input" id="cp-goal" placeholder="ex: Lead Tech, CTO startup…"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Secteur</label>
+            <select class="form-input" id="cp-sector">
+              <option>Fintech / Paiements</option>
+              <option>E-commerce</option>
+              <option>Télécoms</option>
+              <option>Santé / Medtech</option>
+              <option>Conseil / Cabinet</option>
+              <option>Startup tech</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Contraintes (optionnel)</label>
+            <textarea class="form-input" id="cp-const" rows="3" placeholder="ex: rester en Afrique, 10h/sem pour se former…"></textarea>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="runCareer()">Générer ma feuille de route</button>
+        </div>
+      </div>
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden">
+        <div style="padding:20px 24px;border-bottom:1px solid var(--border);font-size:17px;font-weight:700"><i data-lucide="trophy" style="width:18px;height:18px;"></i> Ma feuille de route</div>
+        <div style="padding:24px">
+          <div id="cp-steps" style="display:none;margin-bottom:16px"></div>
+          <div class="ai-box" id="cp-out"><span style="color:var(--text-3);font-style:italic">Votre plan de carrière apparaîtra ici…</span></div>
+          <div style="margin-top:12px;display:flex;gap:8px">
+            <button class="btn btn-secondary btn-sm" onclick="copyAIOut('cp-out', this)"><i data-lucide="copy" style="width:14px;height:14px"></i> Copier</button>
+            <button class="btn btn-secondary btn-sm" onclick="downloadPDF('cp-out', 'Plan de carrière')"><i data-lucide="file-text" style="width:14px;height:14px"></i> PDF</button>
+            <button class="btn btn-secondary btn-sm" onclick="downloadDOCX('cp-out', 'Plan de carrière')"><i data-lucide="file" style="width:14px;height:14px"></i> DOCX</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== PRÉPARER DOCUMENTS ===== -->
+  <div id="tool-docs" class="tool-panel" style="display:none">
+
+    <!-- En-tête -->
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;margin-bottom:20px">
+      <div style="background:var(--gold-bg);border-bottom:1px solid var(--gold-border);padding:22px 26px;display:flex;gap:14px;align-items:center">
+        <div style="width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,var(--gold),var(--gold-dark));display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 3px 10px var(--gold-glow)">
+          <i data-lucide="file-plus" style="width:22px;height:22px;color:white"></i>
+        </div>
+        <div>
+          <div style="font-size:18px;font-weight:700">Préparer mes documents</div>
+          <div style="font-size:13px;color:var(--text-3)">CV · Lettre de motivation · Email — générés depuis votre profil</div>
+        </div>
+      </div>
+      <div style="padding:22px 26px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Poste ciblé <span style="color:var(--text-3);font-weight:400">(optionnel)</span></label>
+            <input class="form-input" id="doc-job-title" placeholder="ex: Data Analyst, Abidjan"/>
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Entreprise <span style="color:var(--text-3);font-weight:400">(optionnel)</span></label>
+            <input class="form-input" id="doc-company" placeholder="ex: Orange CI, MTN…"/>
+          </div>
+        </div>
+        <div class="form-group" style="margin-top:14px;margin-bottom:0">
+          <label class="form-label">Description du poste <span style="color:var(--text-3);font-weight:400">(optionnel — améliore la pertinence)</span></label>
+          <textarea class="form-input" id="doc-job-desc" rows="3" placeholder="Collez ici l'offre d'emploi pour adapter le document…"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3 cartes boutons -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px">
+
+      <!-- CV -->
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden">
+        <div style="background:var(--gold-bg);border-bottom:1px solid var(--gold-border);padding:18px 20px;display:flex;gap:10px;align-items:center">
+          <div style="width:38px;height:38px;border-radius:10px;background:var(--gold);display:flex;align-items:center;justify-content:center">
+            <i data-lucide="file-text" style="width:18px;height:18px;color:white"></i>
+          </div>
+          <div style="font-size:16px;font-weight:700">Mon CV</div>
+        </div>
+        <div style="padding:18px 20px">
+          <p style="font-size:13px;color:var(--text-3);margin-bottom:14px">Génère un CV professionnel adapté au poste ciblé à partir de votre profil.</p>
+          <button class="btn btn-primary btn-full" id="doc-btn-cv" onclick="generateDoc('cv')">
+            <i data-lucide="sparkles" style="width:16px;height:16px"></i> Générer mon CV
+          </button>
+        </div>
+      </div>
+
+      <!-- Lettre de motivation -->
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden">
+        <div style="background:var(--gold-bg);border-bottom:1px solid var(--gold-border);padding:18px 20px;display:flex;gap:10px;align-items:center">
+          <div style="width:38px;height:38px;border-radius:10px;background:var(--gold);display:flex;align-items:center;justify-content:center">
+            <i data-lucide="mail" style="width:18px;height:18px;color:white"></i>
+          </div>
+          <div style="font-size:16px;font-weight:700">Lettre de motivation</div>
+        </div>
+        <div style="padding:18px 20px">
+          <p style="font-size:13px;color:var(--text-3);margin-bottom:10px">Choisissez un style :</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px">
+            <button class="lm-style-btn active-style" data-style="classique" onclick="setLmStyle(this)"
+              style="padding:7px 8px;font-size:12px;font-weight:600;border-radius:8px;border:1.5px solid var(--gold);background:var(--gold-bg);color:var(--gold-dark);cursor:pointer;text-align:left">
+              📄 Classique
+            </button>
+            <button class="lm-style-btn" data-style="impact" onclick="setLmStyle(this)"
+              style="padding:7px 8px;font-size:12px;font-weight:600;border-radius:8px;border:1.5px solid var(--border-2);background:white;color:var(--text);cursor:pointer;text-align:left">
+              🎯 Impact & Résultats
+            </button>
+            <button class="lm-style-btn" data-style="storytelling" onclick="setLmStyle(this)"
+              style="padding:7px 8px;font-size:12px;font-weight:600;border-radius:8px;border:1.5px solid var(--border-2);background:white;color:var(--text);cursor:pointer;text-align:left">
+              📖 Storytelling
+            </button>
+            <button class="lm-style-btn" data-style="enthousiaste" onclick="setLmStyle(this)"
+              style="padding:7px 8px;font-size:12px;font-weight:600;border-radius:8px;border:1.5px solid var(--border-2);background:white;color:var(--text);cursor:pointer;text-align:left">
+              🔥 Enthousiaste
+            </button>
+          </div>
+          <button class="btn btn-secondary btn-full" id="doc-btn-letter" onclick="generateDoc('cover_letter')">
+            <i data-lucide="sparkles" style="width:16px;height:16px"></i> Générer la lettre
+          </button>
+        </div>
+      </div>
+
+      <!-- Email -->
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden">
+        <div style="background:var(--gold-bg);border-bottom:1px solid var(--gold-border);padding:18px 20px;display:flex;gap:10px;align-items:center">
+          <div style="width:38px;height:38px;border-radius:10px;background:var(--gold);display:flex;align-items:center;justify-content:center">
+            <i data-lucide="send" style="width:18px;height:18px;color:white"></i>
+          </div>
+          <div style="font-size:16px;font-weight:700">Email de candidature</div>
+        </div>
+        <div style="padding:18px 20px">
+          <p style="font-size:13px;color:var(--text-3);margin-bottom:14px">Compose un email professionnel prêt à envoyer au recruteur.</p>
+          <button class="btn btn-secondary btn-full" id="doc-btn-email" onclick="generateDoc('email')">
+            <i data-lucide="sparkles" style="width:16px;height:16px"></i> Générer l'email
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Zone résultat -->
+    <div id="doc-result" style="display:none">
+      <div class="card card-gold card-p">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+          <span id="doc-result-title" style="font-size:16px;font-weight:700;color:var(--gold-dark)"></span>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-primary btn-sm" onclick="copyDocResult(this)">
+              <i data-lucide="copy" style="width:13px;height:13px"></i> Copier
+            </button>
+            <button class="btn btn-secondary btn-sm" id="doc-dl-pdf" onclick="downloadDocResult('pdf')">
+              <i data-lucide="file-text" style="width:13px;height:13px"></i> PDF
+            </button>
+            <button class="btn btn-secondary btn-sm" id="doc-dl-docx" onclick="downloadDocResult('docx')">
+              <i data-lucide="file" style="width:13px;height:13px"></i> DOCX
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="document.getElementById('doc-result').style.display='none'">✕</button>
+          </div>
+        </div>
+        <div id="doc-result-text" class="ai-box" style="max-height:420px;overflow-y:auto;white-space:pre-wrap"></div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// <i data-lucide="alert-triangle" style="width:16px;height:16px;"></i>️ On utilise AI_CSRF (pas CSRF) pour éviter le conflit avec base.html
+const AI_CSRF = '{{ csrf_token }}';
+let emailType = 'followup';
+
+/* ---- Navigation onglets ---- */
+function showTool(id, el) {
+  document.querySelectorAll('.tool-panel').forEach(function(p) { p.style.display = 'none'; });
+  document.querySelectorAll('[id^="pill-"]').forEach(function(p) { p.classList.remove('active'); });
+  document.getElementById('tool-' + id).style.display = 'block';
+  el.classList.add('active');
+}
+
+/* ---- Type email ---- */
+function setEmailType(el) {
+  emailType = el.dataset.type;
+  document.querySelectorAll('[data-type]').forEach(function(b) { b.className = 'btn btn-secondary btn-sm'; });
+  el.className = 'btn btn-primary btn-sm';
+}
+
+/* ---- Formater markdown simple ---- */
+function fmtMd(t) {
+  return t
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/### (.+)/g, '<div style="font-size:16px;font-weight:700;margin:12px 0 6px;color:var(--text)">$1</div>')
+    .replace(/## (.+)/g, '<div style="font-size:17px;font-weight:700;margin:14px 0 8px;color:var(--text)">$1</div>')
+    .replace(/^- (.+)/gm, '<div style="padding:4px 0 4px 16px;border-left:3px solid var(--gold-border);margin:3px 0">$1</div>')
+    .replace(/\n\n/g, '<br/><br/>')
+    .replace(/\n/g, '<br/>');
+}
+
+/* ---- Appel IA générique ---- */
+async function callAI(url, data, outId, onDone) {
+  var out = document.getElementById(outId);
+  out.innerHTML = '<div class="ai-loading"><div class="dot-3"><span></span><span></span><span></span></div> IA en cours de réflexion…</div>';
+  try {
+    var r = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': AI_CSRF },
+      body: JSON.stringify(data)
+    });
+    var d = await r.json();
+    var text = d.result || d.reply || d.error || 'Aucune réponse.';
+    out.innerHTML = fmtMd(text);
+    if (onDone) onDone(d);
+  } catch(e) {
+    out.innerHTML = '<span style="color:var(--red)"><i data-lucide="alert-triangle" style="width:16px;height:16px;"></i> Erreur réseau. Vérifiez votre connexion et réessayez.</span>';
+    console.error('callAI error:', e);
+  }
+}
+
+/* ---- Copier le contenu d’un bloc ---- */
+function copyAIOut(id, btn) {
+  if (!btn) btn = event.target.closest('button');
+  var text = document.getElementById(id).innerText;
+  navigator.clipboard.writeText(text).then(function() {
+    var orig = btn.innerHTML;
+    btn.innerHTML = '<i data-lucide="check" style="width:16px;height:16px;"></i> Copié !';
+    setTimeout(function() { btn.innerHTML = orig; }, 2000);
+  }).catch(function(err) {
+    console.error('Erreur lors de la copie:', err);
+    alert('Erreur : impossible de copier le texte');
+  });
+}
+
+/* ── Chargement fichier CV ── */
+async function loadCVFile(input) {
+  var file = input.files[0];
+  if (!file) return;
+  var area = document.getElementById('cv-text');
+  area.value = 'Lecture du fichier en cours…';
+  area.disabled = true;
+
+  // Upload to import endpoint
+  var fd = new FormData();
+  fd.append('cv_file', file);
+  fd.append('csrfmiddlewaretoken', AI_CSRF);
+  try {
+    var r = await fetch('/ai/cv/import/', {method:'POST', headers:{'X-CSRFToken':AI_CSRF}, body: fd});
+    var d = await r.json();
+    if (d.ok && d.cv_text) {
+      area.value = d.cv_text;
+    } else if (d.error) {
+      area.value = '';
+      alert(d.error);
+    }
+  } catch(e) {
+    area.value = '';
+    alert('Erreur: ' + e.message);
+  }
+  area.disabled = false;
+}
+
+async function useSavedCV() {
+  var area = document.getElementById('cv-text');
+  if (!area) return;
+  area.value = 'Lecture de votre CV enregistré…';
+  area.disabled = true;
+  try {
+    var r = await fetch('/ai/cv/import/', {
+      method: 'POST',
+      headers: {'X-CSRFToken': AI_CSRF},
+      body: JSON.stringify({use_profile_cv: true})
+    });
+    var d = await r.json();
+    area.value = d.cv_text || d.error || 'CV chargé.';
+  } catch(e) { area.value = ''; alert('Erreur: ' + e.message); }
+  area.disabled = false;
+}
+
+async function downloadDOCX(outId, title, includePhoto) {
+  var el = document.getElementById(outId);
+  if (!el) return;
+  var text = el.innerText || el.textContent;
+  if (!text || text.includes('apparaîtra ici') || text.length < 20) {
+    alert('Générez d\'abord le contenu avant de télécharger.'); return;
+  }
+  var btn = event.target.closest('button');
+  if (btn) { btn.innerHTML = '<span class="spinner spinner-gold"></span>'; btn.disabled = true; }
+  try {
+    var r = await fetch('/ai/docx/', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','X-CSRFToken':AI_CSRF},
+      body: JSON.stringify({ content: text, title: title || 'Document', include_photo: includePhoto === true })
+    });
+    if (r.ok) {
+      var blob = await r.blob();
+      var url  = URL.createObjectURL(blob);
+      var a    = document.createElement('a');
+      a.href   = url;
+      var _t_d = (title||'').toLowerCase();
+      var isLM_d = _t_d.includes('lettre') || _t_d.includes('motivation');
+      var isCV_d = !isLM_d && (_t_d.includes('cv') || _t_d.includes('curriculum'));
+      var pfx_d  = isLM_d ? 'LM' : (isCV_d ? 'CV' : 'JobFinder');
+      a.download = pfx_d + '_' + (title||'doc').replace(/\s+/g,'_').slice(0,30) + '.docx';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } else {
+      var d = await r.json().catch(()=>({error:'Erreur'}));
+      alert('Erreur DOCX: ' + (d.error||'inconnue'));
+    }
+  } catch(e) { alert('Erreur: ' + e.message); }
+  if (btn) { btn.innerHTML = '<i data-lucide="file" style="width:14px;height:14px"></i> DOCX'; btn.disabled = false; if(window.lucide)lucide.createIcons(); }
+}
+
+async function downloadPDF(outId, title, includePhoto) {
+  var el = document.getElementById(outId);
+  if (!el) return;
+  var text = el.innerText || el.textContent;
+  if (!text || text.includes('apparaîtra ici') || text.length < 20) {
+    alert('Générez d\'abord le contenu avant de télécharger.');
+    return;
+  }
+  var btn = event.target.closest('button');
+  if (btn) { btn.innerHTML = '<span class="spinner spinner-gold"></span>'; btn.disabled = true; }
+  try {
+    var isCV = (title||'').toLowerCase().includes('cv');
+    var r = await fetch('/ai/pdf/', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','X-CSRFToken':AI_CSRF},
+      body: JSON.stringify({
+        content:       text,
+        title:         title || 'Document JobFinder AI',
+        include_photo: includePhoto === true || isCV,
+      })
+    });
+    if (r.ok && (r.headers.get('content-type')||'').includes('pdf')) {
+      var blob = await r.blob();
+      var url  = URL.createObjectURL(blob);
+      var a    = document.createElement('a');
+      a.href   = url;
+      var _t_p = (title||'').toLowerCase();
+      var isLM_p = _t_p.includes('lettre') || _t_p.includes('motivation');
+      var isCV_p = !isLM_p && (_t_p.includes('cv') || _t_p.includes('curriculum'));
+      var pfx_p  = isLM_p ? 'LM' : (isCV_p ? 'CV' : 'JobFinder');
+      a.download = pfx_p + '_' + (title||'doc').replace(/\s+/g,'_').slice(0,30) + '.pdf';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } else {
+      var d = await r.json().catch(()=>({error:'Erreur inconnue'}));
+      alert('Erreur PDF: ' + (d.error || 'inconnue'));
+    }
+  } catch(e) { alert('Erreur: ' + e.message); }
+  if (btn) { btn.innerHTML = '<i data-lucide="download" style="width:14px;height:14px"></i> PDF'; btn.disabled = false; if(window.lucide)lucide.createIcons(); }
+}
+
+/* ==================== CV ==================== */
+async function loadCVFileToAnalyzer(input) {
+  var file = input.files[0];
+  if (!file) return;
+  var area    = document.getElementById('cv-text');
+  var status  = document.getElementById('cv-load-status');
+  area.value  = '';
+  if (status) { status.style.display = 'block'; status.textContent = 'Lecture du fichier…'; }
+  var fd = new FormData();
+  fd.append('cv_file', file);
+  try {
+    var r = await fetch('/ai/cv/import/', { method:'POST', headers:{'X-CSRFToken':AI_CSRF}, body:fd });
+    var d = await r.json();
+    if (d.ok && d.cv_text) {
+      area.value = d.cv_text;
+      if (status) status.textContent = '✓ CV chargé (' + file.name + ')';
+    } else {
+      if (status) { status.style.color = 'var(--red)'; status.textContent = d.error || 'Erreur lecture'; }
+    }
+  } catch(e) {
+    if (status) { status.style.color = 'var(--red)'; status.textContent = 'Erreur: ' + e.message; }
+  }
+}
+
+async function useProfileCVForAnalysis() {
+  var area    = document.getElementById('cv-text');
+  var status  = document.getElementById('cv-load-status');
+  area.value  = 'Chargement de votre CV enregistré…';
+  area.disabled = true;
+  if (status) { status.style.display = 'block'; status.style.color = 'var(--text-3)'; status.textContent = 'Chargement…'; }
+  try {
+    var r = await fetch('/ai/cv/import/', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-CSRFToken':AI_CSRF},
+      body: JSON.stringify({use_profile_cv: true})
+    });
+    var d = await r.json();
+    area.value    = d.cv_text || '';
+    area.disabled = false;
+    if (status) {
+      status.style.color = d.cv_text ? 'var(--green)' : 'var(--red)';
+      status.textContent = d.cv_text ? '✓ CV profil chargé' : (d.error || 'Erreur');
+    }
+  } catch(e) {
+    area.value = ''; area.disabled = false;
+    if (status) { status.style.color = 'var(--red)'; status.textContent = 'Erreur: ' + e.message; }
+  }
+}
+
+async function runCVAnalysis() {
+  var cv = document.getElementById('cv-text').value.trim();
+  if (!cv) { 
+    document.getElementById('cv-text').focus();
+    document.getElementById('cv-text').style.borderColor = 'var(--red)';
+    setTimeout(function(){ document.getElementById('cv-text').style.borderColor = ''; }, 2000);
+    return;
+  }
+  var jobDesc = document.getElementById('cv-job-desc') ? document.getElementById('cv-job-desc').value : '';
+  await callAI(
+    '/ai/cv/analyze/',
+    { cv_text: cv, target_job: document.getElementById('cv-target').value, job_description: jobDesc },
+    'cv-out',
+    function(d) {
+      if (d.scores && d.scores.length) {
+        var sc = document.getElementById('cv-scores');
+        sc.style.display = 'grid';
+        sc.innerHTML = d.scores.map(function(s) {
+          return '<div style="padding:14px;border-radius:10px;background:var(--gold-bg);border:1px solid var(--gold-border);text-align:center">'
+            + '<div style="font-family:\'Playfair Display\',serif;font-size:26px;font-weight:700;color:var(--gold)">' + s.value + '</div>'
+            + '<div style="font-size:12px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:0.6px;margin-top:4px">' + s.label + '</div>'
+            + '<div style="height:5px;background:var(--border);border-radius:50px;margin-top:8px;overflow:hidden">'
+            + '<div style="height:100%;background:var(--gold);border-radius:50px;width:' + s.value + '%"></div></div></div>';
+        }).join('');
+      }
+    }
+  );
+}
+
+/* ==================== ENTRETIEN (QUIZ PROGRESSIF) ==================== */
+var intState = {
+  questions: [],     // [{question, why, answer, type_q}]
+  scores:    [],     // scores per question (0-10)
+  answers:   [],     // user answers
+  current:   0,      // current question index
+  total:     8,      // nb questions
+  jobTitle:  '',
+  totalScore:0,
+};
+
+function setNbQ(n, el) {
+  intState.total = n;
+  document.querySelectorAll('#int-setup [id^="opt-"]').forEach(function(e) {
+    e.style.border = '2px solid var(--border-2)';
+    e.style.background = 'white';
+    e.querySelector('div').style.color = 'var(--text)';
+  });
+  el.style.border = '2px solid var(--gold)';
+  el.style.background = 'var(--gold-bg)';
+  el.querySelector('div').style.color = 'var(--gold-dark)';
+}
+
+async function startInterview() {
+  var job   = document.getElementById('int-job').value.trim();
+  var level = document.getElementById('int-level').value;
+  var type  = document.getElementById('int-type').value;
+  var desc  = document.getElementById('int-job-desc').value.trim();
+  if (!job) { document.getElementById('int-job').focus(); alert('Entrez le poste visé.'); return; }
+
+  intState.jobTitle = job;
+  intState.current  = 0;
+  intState.scores   = [];
+  intState.answers  = [];
+  intState.questions = [];
+
+  // Show loading state
+  var btn = document.getElementById('int-start-btn');
+  btn.innerHTML = '<span class="spinner"></span> Génération des questions…';
+  btn.disabled  = true;
+
+  try {
+    var r = await fetch('/ai/interview/questions/', {
+      method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':AI_CSRF},
+      body: JSON.stringify({job_title:job, job_description:desc, level:level, type:type})
+    });
+    var d = await r.json();
+
+    if (!d.questions || !d.questions.length) {
+      btn.innerHTML = '<i data-lucide="play" style="width:17px;height:17px"></i> D\u00e9marrer l\u2019entretien';
+      btn.disabled  = false;
+      alert('Erreur lors de la génération des questions. Réessayez.');
+      return;
+    }
+
+    // Take only intState.total questions
+    intState.questions = d.questions.slice(0, intState.total);
+    intState.total     = intState.questions.length;
+
+    // Switch to quiz
+    document.getElementById('int-setup').style.display = 'none';
+    document.getElementById('int-quiz').style.display  = 'block';
+
+    // Build dots
+    buildDots();
+    showQuestion(0);
+    if (window.lucide) lucide.createIcons();
+
+  } catch(e) {
+    btn.innerHTML = '<i data-lucide="play" style="width:17px;height:17px"></i> D\u00e9marrer l\u2019entretien';
+    btn.disabled  = false;
+    alert('Erreur réseau: ' + e.message);
+  }
+}
+
+function buildDots() {
+  var dots = document.getElementById('int-dots');
+  dots.innerHTML = '';
+  for (var i = 0; i < intState.total; i++) {
+    var dot = document.createElement('div');
+    dot.id  = 'dot-' + i;
+    dot.style.cssText = 'width:28px;height:28px;border-radius:50%;border:2px solid var(--border-2);background:white;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--text-3);transition:all 0.3s';
+    dot.textContent = (i + 1);
+    dots.appendChild(dot);
+  }
+}
+
+function updateDot(idx, status) {
+  var dot = document.getElementById('dot-' + idx);
+  if (!dot) return;
+  if (status === 'active') {
+    dot.style.background     = 'linear-gradient(135deg,var(--gold),var(--gold-dark))';
+    dot.style.borderColor    = 'var(--gold)';
+    dot.style.color          = 'white';
+  } else if (status === 'good') {
+    dot.style.background     = 'var(--green-bg)';
+    dot.style.borderColor    = 'var(--green)';
+    dot.style.color          = 'var(--green)';
+    dot.innerHTML            = '<i data-lucide="check" style="width:13px;height:13px;pointer-events:none"></i>';
+    if (window.lucide) lucide.createIcons();
+  } else if (status === 'ok') {
+    dot.style.background     = 'var(--gold-bg)';
+    dot.style.borderColor    = 'var(--gold)';
+    dot.style.color          = 'var(--gold-dark)';
+    dot.textContent          = (idx + 1);
+  } else if (status === 'weak') {
+    dot.style.background     = 'var(--red-bg)';
+    dot.style.borderColor    = 'var(--red)';
+    dot.style.color          = 'var(--red)';
+    dot.textContent          = (idx + 1);
+  }
+}
+
+function showQuestion(idx) {
+  var q    = intState.questions[idx];
+  var num  = idx + 1;
+  var total= intState.total;
+
+  document.getElementById('int-q-num').textContent    = num;
+  document.getElementById('int-q-total').textContent  = total;
+  document.getElementById('int-question-text').textContent = q.question;
+  document.getElementById('int-q-type-label').textContent = q.type_q || 'Question d’entretien';
+  document.getElementById('int-answer-area').value    = '';
+  document.getElementById('int-answer-area').disabled = false;
+  document.getElementById('int-submit-btn').disabled  = false;
+  document.getElementById('int-submit-btn').innerHTML = '<i data-lucide="send" style="width:15px;height:15px"></i> Valider ma réponse';
+  document.getElementById('int-eval-zone').style.display = 'none';
+  document.getElementById('int-eval-loading').style.display = 'none';
+  document.getElementById('int-eval-result').style.display  = 'none';
+
+  // Progress bar
+  document.getElementById('int-progress-bar').style.width = ((idx / total) * 100) + '%';
+
+  // Next button label
+  var nextBtn = document.getElementById('int-next-btn');
+  if (nextBtn) {
+    nextBtn.innerHTML = idx + 1 < total
+      ? 'Question suivante <i data-lucide="arrow-right" style="width:15px;height:15px"></i>'
+      : 'Voir mes résultats <i data-lucide="trophy" style="width:15px;height:15px"></i>';
+    if (window.lucide) lucide.createIcons();
+  }
+
+  // Mark dot active
+  updateDot(idx, 'active');
+
+  // Update live score
+  updateLiveScore();
+
+  // Focus textarea
+  setTimeout(function() { document.getElementById('int-answer-area').focus(); }, 100);
+  if (window.lucide) lucide.createIcons();
+}
+
+function updateLiveScore() {
+  var total = intState.scores.length;
+  if (!total) {
+    document.getElementById('int-score-live').textContent = 'Score: —';
+    return;
+  }
+  var sum = intState.scores.reduce(function(a,b){return a+b;},0);
+  var avg = Math.round(sum / total * 10) / 10;
+  document.getElementById('int-score-live').textContent = 'Score: ' + avg.toFixed(1) + '/10';
+}
+
+async function submitAnswer() {
+  var answer = document.getElementById('int-answer-area').value.trim();
+  if (!answer || answer.length < 5) {
+    document.getElementById('int-answer-area').focus();
+    return;
+  }
+
+  var idx = intState.current;
+  var q   = intState.questions[idx];
+
+  // Disable input
+  document.getElementById('int-answer-area').disabled = true;
+  document.getElementById('int-submit-btn').disabled  = true;
+  document.getElementById('int-submit-btn').innerHTML = '<span class="spinner"></span>';
+
+  // Store answer
+  intState.answers[idx] = answer;
+
+  // Show eval zone + loading
+  document.getElementById('int-eval-zone').style.display   = 'block';
+  document.getElementById('int-eval-loading').style.display = 'block';
+  document.getElementById('int-eval-result').style.display  = 'none';
+
+  try {
+    var r = await fetch('/ai/interview/evaluate/', {
+      method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':AI_CSRF},
+      body: JSON.stringify({
+        answer:    answer,
+        question:  q.question,
+        job_title: intState.jobTitle,
+        q_num:     idx + 1,
+        q_total:   intState.total,
+      })
+    });
+    var d = await r.json();
+
+    document.getElementById('int-eval-loading').style.display = 'none';
+
+    if (d.ok && d.result) {
+      renderEvalResult(d.result, idx);
+    } else {
+      // Fallback: show raw text
+      var res = {score: 5, score_label: 'Réponse reçue', strengths: [], improvements: [], improved_answer: d.raw || '', tip: ''};
+      renderEvalResult(res, idx);
+    }
+  } catch(e) {
+    document.getElementById('int-eval-loading').style.display = 'none';
+    document.getElementById('int-eval-zone').style.display    = 'none';
+    alert('Erreur évaluation: ' + e.message);
+  }
+}
+
+function renderEvalResult(res, idx) {
+  var score = parseInt(res.score) || 5;
+  intState.scores[idx] = score;
+  updateLiveScore();
+
+  // Score ring
+  var color  = score >= 8 ? '#1E6B40' : score >= 6 ? '#C9A84C' : score >= 4 ? '#B86010' : '#B83230';
+  var label  = score >= 8 ? 'Excellente réponse !' : score >= 6 ? 'Bonne réponse' : score >= 4 ? 'Réponse partielle' : 'À améliorer';
+  var pct    = score * 10;
+  var r_val  = 26, circ = 2 * 3.14159 * r_val, offset = circ * (1 - pct/100);
+  // Store evaluation for final PDF report
+  if (!intState.evaluations) intState.evaluations = [];
+  intState.evaluations[idx] = res;
+
+  document.getElementById('int-score-ring').innerHTML =
+    '<div style="position:relative;width:64px;height:64px">' +
+    '<svg viewBox="0 0 64 64" style="transform:rotate(-90deg);width:64px;height:64px">' +
+    '<circle cx="32" cy="32" r="' + r_val + '" fill="none" stroke="#E8E6DF" stroke-width="6"/>' +
+    '<circle cx="32" cy="32" r="' + r_val + '" fill="none" stroke="' + color + '" stroke-width="6"' +
+    ' stroke-dasharray="' + circ.toFixed(1) + '" stroke-dashoffset="' + offset.toFixed(1) + '" stroke-linecap="round"/>' +
+    '</svg>' +
+    '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:' + color + '">' + score + '/10</div>' +
+    '</div>';
+
+  document.getElementById('int-score-label').textContent = label;
+  document.getElementById('int-score-label').style.color = color;
+  document.getElementById('int-score-tip').textContent   = res.tip || '';
+
+  // Dot update
+  var dotStatus = score >= 8 ? 'good' : score >= 5 ? 'ok' : 'weak';
+  updateDot(idx, dotStatus);
+
+  // Strengths
+  var strEl = document.getElementById('int-strengths');
+  strEl.innerHTML = '';
+  if (res.strengths && res.strengths.length) {
+    res.strengths.forEach(function(s) {
+      strEl.innerHTML += '<div style="padding:6px 10px;border-radius:7px;background:var(--green-bg);border:1px solid var(--green-border);font-size:13px;color:var(--text-2);margin-bottom:5px">' + s + '</div>';
+    });
+  } else {
+    strEl.innerHTML = '<span style="font-size:13px;color:var(--text-3)">—</span>';
+  }
+
+  // Improvements
+  var impEl = document.getElementById('int-improvements');
+  var impSection = document.getElementById('int-improvements-section');
+  impEl.innerHTML = '';
+  if (res.improvements && res.improvements.length) {
+    impSection.style.display = 'block';
+    res.improvements.forEach(function(imp) {
+      impEl.innerHTML += '<div style="padding:6px 10px;border-radius:7px;background:var(--orange-bg);border:1px solid rgba(180,96,16,.2);font-size:13px;color:var(--text-2);margin-bottom:5px">' + imp + '</div>';
+    });
+  } else {
+    impSection.style.display = 'none';
+  }
+
+  // Better answer
+  document.getElementById('int-better-answer').textContent = res.improved_answer || '';
+  document.getElementById('int-eval-result').style.display = 'block';
+  document.getElementById('int-eval-header').style.background =
+    score >= 8 ? 'var(--green-bg)' : score >= 6 ? 'var(--gold-bg)' : score >= 4 ? 'var(--orange-bg)' : 'var(--red-bg)';
+
+  if (window.lucide) lucide.createIcons();
+
+  // Scroll to eval
+  setTimeout(function() {
+    document.getElementById('int-eval-zone').scrollIntoView({behavior:'smooth', block:'start'});
+  }, 100);
+}
+
+function toggleBetterAnswer() {
+  var el = document.getElementById('int-better-answer');
+  var ic = document.getElementById('int-chevron');
+  var visible = el.style.display !== 'none';
+  el.style.display = visible ? 'none' : 'block';
+  if (ic) ic.setAttribute('data-lucide', visible ? 'chevron-down' : 'chevron-up');
+  if (window.lucide) lucide.createIcons();
+}
+
+function nextQuestion() {
+  var idx = intState.current;
+  if (idx + 1 >= intState.total) {
+    showFinalResults();
+    return;
+  }
+  intState.current = idx + 1;
+  showQuestion(intState.current);
+  // Scroll to top of quiz
+  document.getElementById('int-quiz').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function showFinalResults() {
+  document.getElementById('int-quiz').style.display    = 'none';
+  document.getElementById('int-results').style.display = 'block';
+
+  var scores  = intState.scores;
+  var sum     = scores.reduce(function(a,b){return a+b;},0);
+  var avg     = scores.length ? Math.round(sum / scores.length * 10) / 10 : 0;
+  var avgPct  = Math.round(avg * 10);
+
+  var color   = avg >= 8 ? '#1E6B40' : avg >= 6 ? '#C9A84C' : avg >= 4 ? '#B86010' : '#B83230';
+  var comment = avg >= 8 ? 'Performance excellente ! Vous êtes prêt(e) pour cet entretien.'
+              : avg >= 6 ? 'Bon niveau. Peaufinez quelques réponses et vous serez prêt(e).'
+              : avg >= 4 ? 'Des bases solides, mais continuez à pratiquer.'
+              : 'Révisez les fondamentaux et entraînez-vous encore.';
+
+  // Final ring
+  var r_v = 44, circ_f = 2 * 3.14159 * r_v, off_f = circ_f * (1 - avgPct/100);
+  document.getElementById('int-final-ring').innerHTML =
+    '<div style="position:relative;width:110px;height:110px">' +
+    '<svg viewBox="0 0 110 110" style="transform:rotate(-90deg);width:110px;height:110px">' +
+    '<circle cx="55" cy="55" r="' + r_v + '" fill="none" stroke="#E8E6DF" stroke-width="8"/>' +
+    '<circle cx="55" cy="55" r="' + r_v + '" fill="none" stroke="' + color + '" stroke-width="8"' +
+    ' stroke-dasharray="' + circ_f.toFixed(1) + '" stroke-dashoffset="' + off_f.toFixed(1) + '" stroke-linecap="round"/>' +
+    '</svg>' +
+    '<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">' +
+    '<div style="font-size:26px;font-weight:700;color:' + color + '">' + avg.toFixed(1) + '</div>' +
+    '<div style="font-size:12px;color:var(--text-3)">/ 10</div>' +
+    '</div></div>';
+
+  document.getElementById('int-final-comment').textContent = comment;
+
+  // Detail per question WITH corrections
+  var listEl = document.getElementById('int-results-list');
+  listEl.innerHTML = intState.questions.map(function(q, i) {
+    var sc    = intState.scores[i] || 0;
+    var ans   = intState.answers[i] || '';
+    var ev    = (intState.evaluations || [])[i] || {};
+    var col   = sc >= 8 ? 'var(--green)' : sc >= 6 ? 'var(--gold-dark)' : sc >= 4 ? 'var(--orange)' : 'var(--red)';
+    var bgCol = sc >= 8 ? 'var(--green-bg)' : sc >= 6 ? 'var(--gold-bg)' : sc >= 4 ? 'var(--orange-bg)' : 'var(--red-bg)';
+    var strs  = ev.strengths || [];
+    var imps  = ev.improvements || [];
+    var impr  = ev.improved_answer || '';
+    var tip   = ev.tip || '';
+    var star  = ev.star_feedback || '';
+
+    var h = '<div style="border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:14px">';
+    h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:'+bgCol+'">';
+    h += '<div style="font-size:14px;font-weight:700;color:var(--text);flex:1;margin-right:10px">Q'+(i+1)+'. '+q.question+'</div>';
+    h += '<span style="font-size:15px;font-weight:700;color:'+col+';white-space:nowrap">'+sc+'/10</span></div>';
+    if (ans) {
+      h += '<div style="padding:10px 16px;background:rgba(255,255,255,0.8);border-bottom:1px solid var(--border)">';
+      h += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text-3);margin-bottom:4px">Votre réponse</div>';
+      h += '<div style="font-size:13px;color:var(--text-2);font-style:italic;line-height:1.6">"'+ans+'"</div></div>';
+    }
+    h += '<div style="padding:14px 16px">';
+    if (strs.length) {
+      h += '<div style="margin-bottom:10px"><div style="font-size:12px;font-weight:700;color:var(--green);margin-bottom:5px">✓ Points forts</div>';
+      strs.forEach(function(s){ h += '<div style="font-size:13px;color:var(--text-2);padding:4px 8px;background:var(--green-bg);border-radius:6px;margin-bottom:3px">'+s+'</div>'; });
+      h += '</div>';
+    }
+    if (imps.length) {
+      h += '<div style="margin-bottom:10px"><div style="font-size:12px;font-weight:700;color:var(--orange);margin-bottom:5px">⚠ À améliorer</div>';
+      imps.forEach(function(s){ h += '<div style="font-size:13px;color:var(--text-2);padding:4px 8px;background:var(--orange-bg);border-radius:6px;margin-bottom:3px">'+s+'</div>'; });
+      h += '</div>';
+    }
+    if (star) {
+      h += '<div style="font-size:13px;color:var(--text-3);padding:8px 10px;background:var(--cream-2);border-radius:7px;margin-bottom:8px"><strong>Structure STAR:</strong> '+star+'</div>';
+    }
+    if (impr) {
+      h += '<div><button onclick="var n=this.nextElementSibling;n.style.display=n.style.display===\'none\'?\'block\':\'none\'" style="font-size:12px;font-weight:600;color:var(--gold-dark);background:none;border:none;cursor:pointer;padding:0;display:flex;align-items:center;gap:4px"><i data-lucide=\"sparkles\" style=\"width:13px;height:13px\"></i> Réponse modèle</button>';
+      h += '<div style="display:none;margin-top:8px;padding:12px;background:var(--gold-bg);border:1px solid var(--gold-border);border-radius:9px;font-size:13px;line-height:1.65;color:var(--text-2)">'+impr+'</div></div>';
+    }
+    if (tip) {
+      h += '<div style="margin-top:8px;font-size:12px;font-weight:600;color:var(--blue);padding:6px 10px;background:var(--blue-bg);border-radius:6px">&#128161; '+tip+'</div>';
+    }
+    h += '</div></div>';
+    return h;
+  }).join('');
+
+  document.getElementById('int-results').scrollIntoView({behavior:'smooth', block:'start'});
+  if (window.lucide) lucide.createIcons();
+}
+
+async function downloadInterviewPDF() {
+  var avg = intState.scores.length
+    ? (intState.scores.reduce(function(a,b){return a+b;},0) / intState.scores.length).toFixed(1)
+    : 0;
+  var lines = [
+    '** BILAN D’ENTRETIEN — JobFinder AI **', '',
+    'Poste: ' + intState.jobTitle,
+    'Score global: ' + avg + '/10 (' + intState.total + ' questions)', '',
+    '=== DÉTAIL PAR QUESTION ===', ''
+  ];
+  intState.questions.forEach(function(q, i) {
+    var sc = intState.scores[i] || 0;
+    var ans= intState.answers[i] || '(sans réponse)';
+    var ev = (intState.evaluations || [])[i] || {};
+    lines.push('Q' + (i+1) + '. ' + q.question + '  —  Score: ' + sc + '/10');
+    lines.push('Votre réponse: ' + ans);
+    if (ev.strengths && ev.strengths.length) lines.push('Points forts: ' + ev.strengths.join(' · '));
+    if (ev.improvements && ev.improvements.length) lines.push('À améliorer: ' + ev.improvements.join(' · '));
+    if (ev.star_feedback) lines.push('Structure STAR: ' + ev.star_feedback);
+    if (ev.improved_answer) { lines.push(''); lines.push('** Réponse modèle **'); lines.push(ev.improved_answer); }
+    if (ev.tip) lines.push('Conseil: ' + ev.tip);
+    lines.push(''); lines.push('---'); lines.push('');
+  });
+  try {
+    var r = await fetch('/ai/pdf/', {
+      method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':AI_CSRF},
+      body: JSON.stringify({content: lines.join('\n'), title: 'Bilan Entretien — ' + intState.jobTitle})
+    });
+    if (r.ok) {
+      var blob = await r.blob(); var url = URL.createObjectURL(blob);
+      var a = document.createElement('a'); a.href = url;
+      a.download = 'Bilan_Entretien_JobFinder.pdf';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } else { alert('Erreur génération PDF'); }
+  } catch(e) { alert('Erreur: ' + e.message); }
+}
+
+function restartInterview() {
+  intState = {questions:[], scores:[], answers:[], evaluations:[], current:0, total:8, jobTitle:'', totalScore:0};
+  document.getElementById('int-setup').style.display   = 'block';
+  document.getElementById('int-quiz').style.display    = 'none';
+  document.getElementById('int-results').style.display = 'none';
+  var btn = document.getElementById('int-start-btn');
+  btn.innerHTML = '<i data-lucide="play" style="width:17px;height:17px"></i> D\u00e9marrer l\u2019entretien';
+  btn.disabled  = false;
+  if (window.lucide) lucide.createIcons();
+}
+
+// Legacy stubs (called nowhere now but kept for safety)
+function runInterviewQ() { startInterview(); }
+function runEvalAnswer()  {}
+
+/* ==================== SALAIRE ==================== */
+async function runSalary() {
+  await callAI('/ai/salary/', {
+    job:     document.getElementById('sal-job').value,
+    exp:     document.getElementById('sal-exp').value,
+    country: document.getElementById('sal-country').value,
+    offer:   document.getElementById('sal-offer').value
+  }, 'sal-out');
+}
+
+/* ==================== ANALYSE OFFRE ==================== */
+async function runJobAnalysis() {
+  var jd = document.getElementById('jd-text').value.trim();
+  if (!jd) {
+    document.getElementById('jd-text').focus();
+    document.getElementById('jd-text').style.borderColor = 'var(--red)';
+    setTimeout(function(){ document.getElementById('jd-text').style.borderColor = ''; }, 2000);
+    return;
+  }
+  // Réinitialiser les boutons docs
+  var docsSection = document.getElementById('jd-docs-section');
+  docsSection.style.display = 'none';
+  document.getElementById('jd-doc-result').style.display = 'none';
+  ['jd-btn-cv','jd-btn-letter','jd-btn-email'].forEach(function(id){
+    var btn = document.getElementById(id);
+    if (btn) { btn.disabled = false; btn.style.background = ''; btn.style.color = ''; btn.style.border = ''; }
+  });
+
+  await callAI('/ai/job/analyze/', { job_description: jd }, 'jd-out', function(d) {
+    if (d.score) {
+      document.getElementById('jd-score-wrap').style.display = 'block';
+      document.getElementById('jd-score').textContent = d.score + '%';
+    }
+    // Afficher la section documents après l'analyse
+    docsSection.style.display = 'block';
+    docsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (window.lucide) lucide.createIcons();
+  });
+}
+
+/* ==================== DOCUMENTS DEPUIS OFFRE (Outils IA) ==================== */
+async function generateDocFromJD(type) {
+  var jd = document.getElementById('jd-text').value.trim();
+  if (!jd) { alert('La description du poste est vide.'); return; }
+
+  var btnId = type === 'cv' ? 'jd-btn-cv' : type === 'cover_letter' ? 'jd-btn-letter' : 'jd-btn-email';
+  var btn   = document.getElementById(btnId);
+  var res   = document.getElementById('jd-doc-result');
+  var text  = document.getElementById('jd-doc-text');
+  var title = document.getElementById('jd-doc-title');
+
+  var labels = { cv: 'CV adapté à ce poste', cover_letter: 'Lettre de motivation', email: 'Email de candidature' };
+  var icons  = { cv: 'file-text', cover_letter: 'mail', email: 'send' };
+
+  // Désactiver tous les boutons pendant la génération
+  ['jd-btn-cv','jd-btn-letter','jd-btn-email'].forEach(function(id){
+    var b = document.getElementById(id);
+    if (b) { b.disabled = true; b.style.opacity = '0.6'; }
+  });
+  btn.innerHTML = '<span class="spinner spinner-gold"></span> Génération…';
+
+  res.style.display = 'block';
+  title.innerHTML = '<i data-lucide="' + icons[type] + '" style="width:15px;height:15px"></i> ' + labels[type];
+  text.innerHTML = '<div class="ai-loading"><div class="dot-3"><span></span><span></span><span></span></div> Rédaction en cours…</div>';
+  text.dataset.raw = '';
+  if (window.lucide) lucide.createIcons();
+
+  try {
+    var url, body;
+    if (type === 'email') {
+      // Email de candidature spontanée basé sur l'offre
+      url  = '/ai/email/';
+      body = { type: 'spontaneous', recipient: 'le/la Responsable RH', position: '', context: jd.slice(0, 400), tone: 'Professionnel & chaleureux' };
+    } else {
+      url  = '/ai/doc/' + type + '/';
+      body = { job_title: '', company: '', job_description: jd, job_skills: '' };
+    }
+
+    var r = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': AI_CSRF },
+      body: JSON.stringify(body)
+    });
+    var d = await r.json();
+    var content = d.result || d.reply || 'Erreur lors de la génération.';
+    text.innerHTML = fmtMd(content);
+    text.dataset.raw = content;
+
+    // Mettre le bouton cliqué en vert
+    btn.innerHTML = '<i data-lucide="check" style="width:15px;height:15px"></i> ' + labels[type];
+    btn.style.background = 'var(--green-bg)';
+    btn.style.color      = 'var(--green)';
+    btn.style.border     = '1px solid var(--green-border)';
+    btn.style.opacity    = '1';
+    btn.disabled         = false;
+
+  } catch(e) {
+    text.innerHTML = '<span style="color:var(--red)"><i data-lucide="alert-triangle" style="width:16px;height:16px"></i> Erreur réseau. Réessayez.</span>';
+    btn.innerHTML = '<i data-lucide="' + icons[type] + '" style="width:15px;height:15px"></i> ' + labels[type];
+  }
+
+  // Réactiver les autres boutons
+  ['jd-btn-cv','jd-btn-letter','jd-btn-email'].forEach(function(id){
+    var b = document.getElementById(id);
+    if (b) { b.disabled = false; b.style.opacity = '1'; }
+  });
+  if (window.lucide) lucide.createIcons();
+  res.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function copyJdDoc(btn) {
+  var t = document.getElementById('jd-doc-text').dataset.raw || document.getElementById('jd-doc-text').innerText;
+  navigator.clipboard.writeText(t).then(function() {
+    var orig = btn.innerHTML;
+    btn.innerHTML = '<i data-lucide="check" style="width:13px;height:13px"></i> Copié !';
+    if (window.lucide) lucide.createIcons();
+    setTimeout(function() { btn.innerHTML = orig; if (window.lucide) lucide.createIcons(); }, 2000);
+  });
+}
+
+async function downloadJdDoc(fmt) {
+  var text    = document.getElementById('jd-doc-text');
+  var title   = document.getElementById('jd-doc-title');
+  var content = text.dataset.raw || text.innerText;
+  var docTitle = title ? title.textContent.trim() : 'Document';
+
+  if (!content || content.length < 20) { alert('Générez d\'abord le document.'); return; }
+
+  var btnId = fmt === 'docx' ? 'jd-btn-docx' : 'jd-btn-pdf';
+  var btn   = document.getElementById(btnId);
+  var orig  = btn ? btn.innerHTML : '';
+  if (btn) { btn.innerHTML = '<span class="spinner spinner-gold"></span>'; btn.disabled = true; }
+
+  try {
+    var isCV      = docTitle.toLowerCase().includes('cv');
+    var endpoint  = fmt === 'docx' ? '/ai/docx/' : '/ai/pdf/';
+    var r = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': AI_CSRF },
+      body: JSON.stringify({ content: content, title: docTitle, include_photo: isCV })
+    });
+    if (r.ok) {
+      var blob = await r.blob();
+      var url  = URL.createObjectURL(blob);
+      var a    = document.createElement('a');
+      a.href   = url;
+      var pfx  = docTitle.includes('CV') ? 'CV' : docTitle.includes('Lettre') ? 'LM' : 'Email';
+      a.download = pfx + '_JobFinder.' + fmt;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } else { alert('Erreur lors du téléchargement.'); }
+  } catch(e) { alert('Erreur: ' + e.message); }
+
+  if (btn) { btn.innerHTML = orig; btn.disabled = false; if (window.lucide) lucide.createIcons(); }
+}
+
+/* ==================== EMAIL ==================== */
+let emailFull = '';
+let emailBody = '';
+let emailSubject = '';
+let emailRecipient = '';
+
+function _stripEmailMeta(text) {
+  // Supprime les lignes de métadonnées que l'IA insère parfois dans le corps
+  // (De:, From:, Objet:, OBJET:, Sujet:, Subject:, À:, To:)
+  var metaRe = /^(de\s*:|from\s*:|objet\s*:|sujet\s*:|subject\s*:|à\s*:|to\s*:)/i;
+  return text.split('\n').filter(function(l) {
+    return !metaRe.test(l.trim());
+  }).join('\n').replace(/^\s*\n+/, '').trim();
+}
+
+function formatEmailContent(body) {
+  emailRecipient = document.getElementById('em-recip').value || 'Destinataire';
+  let position = document.getElementById('em-pos').value || 'le poste';
+
+  // Générer sujet basé sur le type
+  let type = emailType;
+  if (type === 'followup') emailSubject = `Relance - ${position}`;
+  else if (type === 'spontaneous') emailSubject = `Candidature - ${position}`;
+  else if (type === 'thanks') emailSubject = `Merci pour l'entretien`;
+  else if (type === 'decline') emailSubject = `Re: Votre offre`;
+  else emailSubject = position;
+
+  // Nettoyer le corps : retirer les lignes De:/Objet: générées par l'IA
+  emailBody = _stripEmailMeta(body.trim());
+
+  emailFull = `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Objet: ${emailSubject}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+${emailBody}`;
+
+  // Afficher dans la boîte
+  let out = document.getElementById('em-out');
+  out.innerText = emailFull;
+  out.dataset.raw = emailFull;
+}
+
+async function runEmail() {
+  await callAI('/ai/email/', {
+    type:      emailType,
+    recipient: document.getElementById('em-recip').value,
+    position:  document.getElementById('em-pos').value,
+    context:   document.getElementById('em-ctx').value,
+    tone:      document.getElementById('em-tone').value
+  }, 'em-out', function() {
+    let body = emailBody || document.getElementById('em-out').innerText;
+    formatEmailContent(body);
+    var acts = document.getElementById('em-actions');
+    acts.style.display = 'flex';
+    if (window.lucide) lucide.createIcons();
+  });
+}
+
+function copyEmail(btn) {
+  if (!btn) btn = event.target.closest('button');
+  navigator.clipboard.writeText(emailFull).then(function() {
+    btn.innerHTML = '<i data-lucide="check" style="width:16px;height:16px;"></i> Mail copié !';
+    setTimeout(function() { btn.innerHTML = '<i data-lucide="clipboard-list" style="width:16px;height:16px;"></i> Copier le mail'; }, 2000);
+  }).catch(err => alert('Erreur: ' + err));
+}
+
+function copyEmailText(btn) {
+  if (!btn) btn = event.target.closest('button');
+  navigator.clipboard.writeText(emailBody).then(function() {
+    btn.innerHTML = '<i data-lucide="check" style="width:16px;height:16px;"></i> Copié !';
+    setTimeout(function() { btn.innerHTML = '<i data-lucide="copy" style="width:16px;height:16px;"></i> Copier'; lucide.createIcons(); }, 2000);
+  }).catch(err => alert('Erreur: ' + err));
+}
+
+function _buildEmailStructuredContent() {
+  // Construit le contenu structuré DESTINATAIRE:/OBJET:/corps
+  // identique au format LM pour que generate_pdf/docx puisse le parser
+  var recip = emailRecipient || document.getElementById('em-recip').value || 'Destinataire';
+  var subj  = emailSubject  || '';
+  var body  = emailBody     || '';
+  // Si on n'a que emailFull (display text), extraire le corps au-dessous des séparateurs
+  if (!body && emailFull) {
+    var lines = emailFull.split('\n');
+    var bodyLines = [];
+    var pastHeader = false;
+    for (var i = 0; i < lines.length; i++) {
+      if (!pastHeader && lines[i].includes('━━━')) { pastHeader = true; continue; }
+      // second separator marks end of header block
+      if (pastHeader && lines[i].includes('━━━')) continue;
+      if (pastHeader) bodyLines.push(lines[i]);
+    }
+    body = bodyLines.join('\n').trim();
+  }
+  return 'DESTINATAIRE: ' + recip + '\nOBJET: ' + subj + '\n\n' + body;
+}
+
+async function downloadEmailPDF() {
+  var bodyCheck = emailBody || document.getElementById('em-out').innerText;
+  if (!bodyCheck || bodyCheck.includes('apparaîtra ici') || bodyCheck.length < 20) {
+    alert('Générez d\'abord l\'email avant de télécharger.'); return;
+  }
+  var btn = document.getElementById('em-btn-pdf');
+  var origHtml = btn.innerHTML;
+  btn.innerHTML = '<span class="spinner spinner-gold"></span>'; btn.disabled = true;
+
+  var pos  = document.getElementById('em-pos').value || 'Email';
+  var typeLabels = {followup:'Relance', spontaneous:'CandidatureSpontanee', thanks:'Remerciement', decline:'RefusPoli'};
+  var fileTitle  = 'email_' + (typeLabels[emailType] || 'Email') + '_' + pos.replace(/\s+/g,'_').slice(0,20);
+  var structuredContent = _buildEmailStructuredContent();
+
+  try {
+    var r = await fetch('/ai/pdf/', {
+      method:  'POST',
+      headers: {'Content-Type':'application/json','X-CSRFToken':AI_CSRF},
+      body:    JSON.stringify({ content: structuredContent, title: fileTitle, include_photo: false })
+    });
+    if (r.ok && (r.headers.get('content-type')||'').includes('pdf')) {
+      var blob = await r.blob();
+      var url  = URL.createObjectURL(blob);
+      var a    = document.createElement('a'); a.href = url;
+      a.download = fileTitle + '.pdf';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } else {
+      var d = await r.json().catch(()=>({error:'Erreur serveur'}));
+      alert('Erreur PDF : ' + (d.error||'inconnue'));
+    }
+  } catch(e) { alert('Erreur : ' + e.message); }
+  btn.innerHTML = origHtml; btn.disabled = false;
+  if (window.lucide) lucide.createIcons();
+}
+
+async function downloadEmailDocx() {
+  var bodyCheck = emailBody || document.getElementById('em-out').innerText;
+  if (!bodyCheck || bodyCheck.includes('apparaîtra ici') || bodyCheck.length < 20) {
+    alert('Générez d\'abord l\'email avant de télécharger.'); return;
+  }
+  var btn = document.getElementById('em-btn-docx');
+  var origHtml = btn.innerHTML;
+  btn.innerHTML = '<span class="spinner spinner-gold"></span>'; btn.disabled = true;
+
+  var pos  = document.getElementById('em-pos').value || 'Email';
+  var typeLabels = {followup:'Relance', spontaneous:'CandidatureSpontanee', thanks:'Remerciement', decline:'RefusPoli'};
+  var fileTitle  = 'email_' + (typeLabels[emailType] || 'Email') + '_' + pos.replace(/\s+/g,'_').slice(0,20);
+  var structuredContent = _buildEmailStructuredContent();
+
+  try {
+    var r = await fetch('/ai/docx/', {
+      method:  'POST',
+      headers: {'Content-Type':'application/json','X-CSRFToken':AI_CSRF},
+      body:    JSON.stringify({ content: structuredContent, title: fileTitle, include_photo: false })
+    });
+    if (r.ok) {
+      var blob = await r.blob();
+      var url  = URL.createObjectURL(blob);
+      var a    = document.createElement('a'); a.href = url;
+      a.download = fileTitle + '.docx';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } else {
+      var d = await r.json().catch(()=>({error:'Erreur serveur'}));
+      alert('Erreur DOCX : ' + (d.error||'inconnue'));
+    }
+  } catch(e) { alert('Erreur : ' + e.message); }
+  btn.innerHTML = origHtml; btn.disabled = false;
+  if (window.lucide) lucide.createIcons();
+}
+
+/* ==================== CARRIÈRE ==================== */
+async function runCareer() {
+  await callAI('/ai/career/', {
+    current:     document.getElementById('cp-cur').value,
+    goal:        document.getElementById('cp-goal').value,
+    sector:      document.getElementById('cp-sector').value,
+    constraints: document.getElementById('cp-const').value
+  }, 'cp-out', function() {
+    var steps  = document.getElementById('cp-steps');
+    var labels = ['Consolidation', 'Progression', 'Leadership', 'Direction', 'Objectif'];
+    steps.style.display = 'block';
+    steps.innerHTML = labels.map(function(l, i) {
+      var gold   = i === 0;
+      var border = gold ? 'var(--gold)' : 'var(--border)';
+      var bg     = gold ? 'var(--gold-bg)' : 'white';
+      var circleBg = gold ? 'var(--gold)' : 'var(--border-2)';
+      var circleColor = gold ? 'white' : 'var(--text-3)';
+      var now = gold ? '<span class="badge badge-gold" style="margin-left:auto">Maintenant</span>' : '';
+      return '<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:10px;border:1px solid ' + border + ';background:' + bg + ';margin-bottom:8px">'
+        + '<div style="width:28px;height:28px;border-radius:50%;background:' + circleBg + ';color:' + circleColor + ';display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">' + (i+1) + '</div>'
+        + '<div><div style="font-size:15px;font-weight:700">' + l + '</div>'
+        + '<div style="font-size:13px;color:var(--text-3)">' + (i*12) + '–' + ((i+1)*12) + ' mois</div></div>'
+        + now + '</div>';
+    }).join('');
+  });
+}
+
+/* ==================== PRÉPARER DOCUMENTS ==================== */
+var _lmStyle = 'classique';
+
+function setLmStyle(el) {
+  _lmStyle = el.dataset.style;
+  document.querySelectorAll('.lm-style-btn').forEach(function(b) {
+    b.style.border     = '1.5px solid var(--border-2)';
+    b.style.background = 'white';
+    b.style.color      = 'var(--text)';
+  });
+  el.style.border     = '1.5px solid var(--gold)';
+  el.style.background = 'var(--gold-bg)';
+  el.style.color      = 'var(--gold-dark)';
+}
+
+async function generateDoc(type) {
+  var jobTitle  = document.getElementById('doc-job-title').value.trim();
+  var company   = document.getElementById('doc-company').value.trim();
+  var jobDesc   = document.getElementById('doc-job-desc').value.trim();
+
+  var btnIds = { cv: 'doc-btn-cv', cover_letter: 'doc-btn-letter', email: 'doc-btn-email' };
+  var labels = { cv: 'Mon CV', cover_letter: 'Lettre de motivation', email: 'Email de candidature' };
+  var icons  = { cv: 'file-text', cover_letter: 'mail', email: 'send' };
+
+  var btn = document.getElementById(btnIds[type]);
+  var res   = document.getElementById('doc-result');
+  var text  = document.getElementById('doc-result-text');
+  var title = document.getElementById('doc-result-title');
+
+  // Désactiver tous les boutons
+  ['doc-btn-cv','doc-btn-letter','doc-btn-email'].forEach(function(id) {
+    var b = document.getElementById(id);
+    if (b) { b.disabled = true; b.style.opacity = '0.6'; }
+  });
+  btn.innerHTML = '<span class="spinner spinner-gold"></span> Génération…';
+
+  res.style.display = 'block';
+  title.innerHTML = '<i data-lucide="' + icons[type] + '" style="width:15px;height:15px"></i> ' + labels[type];
+  text.innerHTML = '<div class="ai-loading"><div class="dot-3"><span></span><span></span><span></span></div> Rédaction en cours…</div>';
+  text.dataset.raw = '';
+  text.dataset.doctype = type;
+  if (window.lucide) lucide.createIcons();
+
+  try {
+    var url, body;
+    if (type === 'email') {
+      url  = '/ai/email/';
+      body = { type: 'spontaneous', recipient: 'le/la Responsable RH',
+               position: jobTitle, context: jobDesc.slice(0, 400),
+               tone: 'Professionnel & chaleureux' };
+    } else {
+      url  = '/ai/doc/' + type + '/';
+      body = { job_title: jobTitle, company: company,
+               job_description: jobDesc, job_skills: '',
+               lm_style: type === 'cover_letter' ? _lmStyle : undefined };
+    }
+
+    var r = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': AI_CSRF },
+      body: JSON.stringify(body)
+    });
+    var d = await r.json();
+    var content = d.result || d.reply || 'Erreur lors de la génération.';
+    text.innerHTML = fmtMd(content);
+    text.dataset.raw = content;
+
+    btn.innerHTML = '<i data-lucide="check" style="width:15px;height:15px"></i> ' + labels[type];
+    btn.style.background = 'var(--green-bg)';
+    btn.style.color      = 'var(--green)';
+    btn.style.border     = '1px solid var(--green-border)';
+    btn.style.opacity    = '1';
+    btn.disabled         = false;
+  } catch(e) {
+    text.innerHTML = '<span style="color:var(--red)"><i data-lucide="alert-triangle" style="width:16px;height:16px"></i> Erreur réseau. Réessayez.</span>';
+    btn.innerHTML = '<i data-lucide="' + icons[type] + '" style="width:15px;height:15px"></i> ' + labels[type];
+  }
+
+  ['doc-btn-cv','doc-btn-letter','doc-btn-email'].forEach(function(id) {
+    var b = document.getElementById(id);
+    if (b && b.disabled) { b.disabled = false; b.style.opacity = '1'; }
+  });
+  if (window.lucide) lucide.createIcons();
+  res.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function copyDocResult(btn) {
+  var t = document.getElementById('doc-result-text').dataset.raw
+       || document.getElementById('doc-result-text').innerText;
+  navigator.clipboard.writeText(t).then(function() {
+    var orig = btn.innerHTML;
+    btn.innerHTML = '<i data-lucide="check" style="width:13px;height:13px"></i> Copié !';
+    if (window.lucide) lucide.createIcons();
+    setTimeout(function() { btn.innerHTML = orig; if (window.lucide) lucide.createIcons(); }, 2000);
+  });
+}
+
+async function downloadDocResult(fmt) {
+  var textEl  = document.getElementById('doc-result-text');
+  var titleEl = document.getElementById('doc-result-title');
+  var content = textEl.dataset.raw || textEl.innerText;
+  var docTitle = titleEl ? titleEl.textContent.trim() : 'Document';
+  var docType  = textEl.dataset.doctype || '';
+
+  if (!content || content.length < 20) { alert('Générez d\'abord le document.'); return; }
+
+  var btnId = fmt === 'docx' ? 'doc-dl-docx' : 'doc-dl-pdf';
+  var btn   = document.getElementById(btnId);
+  var orig  = btn ? btn.innerHTML : '';
+  if (btn) { btn.innerHTML = '<span class="spinner spinner-gold"></span>'; btn.disabled = true; }
+
+  try {
+    var isCV     = docType === 'cv' || docTitle.toLowerCase().includes('cv');
+    var endpoint = fmt === 'docx' ? '/ai/docx/' : '/ai/pdf/';
+    var r = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': AI_CSRF },
+      body: JSON.stringify({ content: content, title: docTitle, include_photo: isCV })
+    });
+    if (r.ok) {
+      var blob = await r.blob();
+      var url  = URL.createObjectURL(blob);
+      var a    = document.createElement('a');
+      a.href   = url;
+      var pfx  = docType === 'cv' ? 'CV' : (docType === 'cover_letter' ? 'LM' : 'EMAIL');
+      a.download = pfx + '_' + docTitle.replace(/\s+/g,'_').slice(0,30) + '.' + fmt;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } else {
+      var d = await r.json().catch(function(){ return {error:'Erreur'}; });
+      alert('Erreur ' + fmt.toUpperCase() + ': ' + (d.error || 'inconnue'));
+    }
+  } catch(e) { alert('Erreur: ' + e.message); }
+  if (btn) {
+    btn.innerHTML = orig; btn.disabled = false;
+    if (window.lucide) lucide.createIcons();
+  }
+}
+</script>
+{% endblock %}

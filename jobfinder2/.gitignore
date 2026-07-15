@@ -1,0 +1,58 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Environnements virtuels
+venv/
+env/
+.venv/
+ENV/
+
+# Django
+*.sqlite3
+db.sqlite3
+media/
+staticfiles/
+local_settings.py
+
+# Variables d'environnement — NE JAMAIS COMMITTER
+.env
+
+# Logs
+logs/
+*.log
+
+# Backups et fichiers temporaires
+backup*.json
+temp_data.json
+*.bak
+*.tmp
+
+# IDE
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Fichiers de test de scraping
+debug_html.py
+test_*.py
+
+# Cache
+.cache/
+*.cache

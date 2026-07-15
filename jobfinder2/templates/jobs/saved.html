@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% load tags %}
+{% block title %}Offres sauvegardées — JobFinder AI{% endblock %}
+{% block nj %}active{% endblock %}
+
+{% block content %}
+<div class="page-inner">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;margin-bottom:28px">
+    <div>
+      <h1 class="h1">Offres sauvegardées</h1>
+      <p class="body" style="color:var(--text-2);margin-top:6px">{{ data|length }} offre{{ data|length|pluralize }} sauvegardée{{ data|length|pluralize }}</p>
+    </div>
+    <a href="{% url 'jobs:list' %}" class="btn btn-primary btn-sm">
+      <i data-lucide="search" style="width:15px;height:15px"></i> Voir toutes les offres
+    </a>
+  </div>
+
+  {% if data %}
+  <div style="display:grid;gap:14px">
+    {% for item in data %}{% with job=item.job score=item.score %}
+    <div style="background:var(--cream);border:1px solid var(--border);border-radius:var(--r);padding:22px 24px;display:flex;align-items:flex-start;gap:18px;transition:all 0.25s"
+      onmouseover="this.style.boxShadow='var(--shadow-md)';this.style.transform='translateY(-2px)'"
+      onmouseout="this.style.boxShadow='none';this.style.transform='translateY(0)'">
+
+      <a href="{% url 'jobs:detail' job.pk %}" style="display:flex;gap:18px;align-items:flex-start;flex:1;text-decoration:none;min-width:0">
+        <div style="width:54px;height:54px;border-radius:12px;background:var(--gold-bg);border:1px solid var(--gold-border);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          {% if job.company_logo %}
+          <img src="{{ job.company_logo.url }}" style="width:100%;height:100%;object-fit:contain;border-radius:12px"/>
+          {% else %}
+          <i data-lucide="{{ job.domain_icon }}" style="width:24px;height:24px;color:var(--gold-dark)"></i>
+          {% endif %}
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ job.title }}</div>
+          <div style="font-size:15px;color:var(--text-2);margin-bottom:8px">{{ job.company }} · {{ job.location }}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:7px;align-items:center">
+            <span class="badge badge-gray">{{ job.get_job_type_display }}</span>
+            {% if job.is_remote %}<span class="badge badge-blue"><i data-lucide="globe" style="width:13px;height:13px"></i> Remote</span>{% endif %}
+            {% if job.salary_min %}<span class="badge badge-gold">{{ job.salary_text }}</span>{% endif %}
+            {% if job.source_type == 'employer' %}<span class="badge badge-green"><i data-lucide="check" style="width:12px;height:12px"></i> Employeur</span>{% endif %}
+            <span style="font-size:13px;color:var(--text-3)">Sauvegardé {{ item.saved_at|date:"d M" }}</span>
+            <span style="font-size:13px;color:var(--text-3);margin-left:4px">· {{ job.days_ago }}</span>
+          </div>
+        </div>
+      </a>
+
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:10px;flex-shrink:0">
+        {% if score %}{% match_ring score 52 %}{% endif %}
+        <div style="display:flex;gap:8px">
+          {% if job.external_url and job.source_type == 'scraping' %}
+          <a href="{{ job.external_url }}" target="_blank" class="btn btn-sm" style="background:rgba(26,78,122,.08);border:1px solid rgba(26,78,122,.2);color:var(--blue);padding:7px 10px" title="Site source">
+            <i data-lucide="external-link" style="width:14px;height:14px"></i>
+          </a>
+          {% endif %}
+          <a href="{% url 'jobs:detail' job.pk %}" class="btn btn-primary btn-sm">Voir l'offre</a>
+          <button onclick="unsave({{ job.pk }}, this)" class="btn btn-sm" style="background:var(--red-bg);border:1px solid rgba(184,50,48,.2);color:var(--red);padding:7px 10px" title="Retirer">
+            <i data-lucide="trash-2" style="width:14px;height:14px"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+    {% endwith %}{% endfor %}
+  </div>
+
+  {% else %}
+  <div class="card card-p" style="text-align:center;padding:72px">
+    <i data-lucide="bookmark" style="width:48px;height:48px;color:var(--border-2);display:block;margin:0 auto 16px"></i>
+    <div class="h3" style="margin-bottom:10px">Aucune offre sauvegardée</div>
+    <p class="body" style="color:var(--text-3);margin-bottom:22px">Sauvegardez des offres pour les retrouver ici.</p>
+    <a href="{% url 'jobs:list' %}" class="btn btn-primary">Explorer les offres</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function unsave(pk, btn) {
+  if (!confirm('Retirer cette offre de vos sauvegardes ?')) return;
+  var r = await fetch('/jobs/' + pk + '/save/', {method:'POST', headers:{'X-CSRFToken':'{{ csrf_token }}'}});
+  var d = await r.json();
+  if (!d.saved) {
+    var card = btn.closest('div[style*="border-radius"]');
+    if (card) { card.style.opacity='0'; card.style.transform='translateY(-8px)'; setTimeout(function(){ card.remove(); },300); }
+  }
+}
+document.addEventListener('DOMContentLoaded', function() { if(window.lucide) lucide.createIcons(); });
+</script>
+{% endblock %}

@@ -1,0 +1,238 @@
+{% extends 'base.html' %}
+{% load tags %}
+{% block title %}Dashboard — JobFinder AI{% endblock %}
+{% block nd %}active{% endblock %}
+
+{% block content %}
+<div class="page-inner">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;margin-bottom:32px">
+    <div>
+      <h1 class="h1">Bonjour, {{ user.first_name|default:user.email }}</h1>
+      <p class="body" style="color:var(--text-2);margin-top:6px">Tableau de bord personnalisé</p>
+    </div>
+    <div style="display:flex;gap:10px">
+      <a href="{% url 'core:analytics' %}" class="btn btn-secondary" style="display:inline-flex;align-items:center;gap:7px"><i data-lucide="bar-chart-2" style="width:16px;height:16px"></i> Analytics</a>
+      <a href="{% url 'jobs:list' %}" class="btn btn-primary"><i data-lucide="search" style="width:16px;height:16px"></i> Trouver des offres</a>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="grid-4" style="margin-bottom:28px">
+    <div class="card card-p">
+      <div style="width:40px;height:40px;border-radius:10px;background:var(--gold-bg);border:1px solid var(--gold-border);display:flex;align-items:center;justify-content:center;margin-bottom:14px">
+        <i data-lucide="target" style="width:20px;height:20px;color:var(--gold-dark)"></i>
+      </div>
+      <div class="stat-number">{{ stats.top_score }}%</div>
+      <div class="stat-label">Meilleur match</div>
+      {% if stats.top_score_job %}
+      <div style="font-size:13px;color:var(--gold-dark);font-weight:600;margin-top:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+        <a href="{% url 'jobs:detail' stats.top_score_job.pk %}" style="color:inherit;text-decoration:none">{{ stats.top_score_job.title|truncatechars:26 }}</a>
+      </div>
+      {% if stats.top_score_job.source_type == 'employer' or stats.top_score_job.source_type == 'manual' %}
+      <div style="margin-top:6px;font-size:11px;color:#1E6B40;font-weight:700;display:inline-flex;align-items:center;gap:5px">
+        <i data-lucide="building-2" style="width:12px;height:12px"></i> Offre recruteur direct
+      </div>
+      {% endif %}
+      {% endif %}
+    </div>
+    <div class="card card-p">
+      <div style="width:40px;height:40px;border-radius:10px;background:var(--blue-bg);border:1px solid rgba(26,78,122,0.2);display:flex;align-items:center;justify-content:center;margin-bottom:14px">
+        <i data-lucide="clipboard-list" style="width:20px;height:20px;color:var(--blue)"></i>
+      </div>
+      <div class="stat-number">{{ stats.apps_total }}</div>
+      <div class="stat-label">Candidatures</div>
+      <div style="font-size:13px;color:var(--text-3);margin-top:6px">Taux de réponse: {{ stats.response_rate }}%</div>
+    </div>
+    <div class="card card-p">
+      <div style="width:40px;height:40px;border-radius:10px;background:var(--green-bg);border:1px solid var(--green-border);display:flex;align-items:center;justify-content:center;margin-bottom:14px">
+        <i data-lucide="mic" style="width:20px;height:20px;color:var(--green)"></i>
+      </div>
+      <div class="stat-number">{{ stats.interviews }}</div>
+      <div class="stat-label">Entretiens</div>
+      {% if analytics.offers %}<div style="font-size:13px;color:var(--green);font-weight:600;margin-top:6px">{{ analytics.offers }} offre(s) reçue(s)</div>{% endif %}
+    </div>
+    <div class="card card-p">
+      <div style="width:40px;height:40px;border-radius:10px;background:var(--gold-bg);border:1px solid var(--gold-border);display:flex;align-items:center;justify-content:center;margin-bottom:14px">
+        <i data-lucide="bar-chart-2" style="width:20px;height:20px;color:var(--gold-dark)"></i>
+      </div>
+      <div class="stat-number">{{ stats.avg_score }}%</div>
+      <div class="stat-label">Score matching moyen</div>
+      <div style="font-size:13px;color:var(--text-3);margin-top:6px">Calculé sur votre profil NLP</div>
+    </div>
+  </div>
+
+  <div class="layout-2col" style="gap:28px">
+
+    <!-- Top 10 offres — triées par score de matching décroissant -->
+    <div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+        <div>
+          <div style="font-size:19px;font-weight:700">Top offres pour vous</div>
+          <div style="font-size:13px;color:var(--text-3);margin-top:3px">
+            {% if top_matches %}{{ top_matches|length }} offres correspondant à votre profil — meilleures en premier{% else %}Basé sur votre profil NLP{% endif %}
+          </div>
+        </div>
+        <a href="{% url 'jobs:list' %}" style="font-size:14px;color:var(--gold-dark);font-weight:600;text-decoration:none;display:flex;align-items:center;gap:4px">Toutes les offres <i data-lucide="arrow-right" style="width:15px;height:15px"></i></a>
+      </div>
+      <div style="display:grid;gap:12px">
+        {% for item in top_matches %}
+        <a href="{% url 'jobs:detail' item.job.pk %}" style="background:var(--glass-2);border:1px solid var(--glass-border);border-radius:var(--r-lg);padding:18px 20px;display:flex;align-items:center;gap:14px;text-decoration:none;transition:all 0.25s;backdrop-filter:blur(8px)" onmouseover="this.style.boxShadow='var(--shadow-md)';this.style.transform='translateY(-1px)'" onmouseout="this.style.boxShadow='none';this.style.transform='translateY(0)'">
+          <!-- Rank badge -->
+          <div style="position:relative;width:50px;height:50px;flex-shrink:0">
+            <div style="width:50px;height:50px;border-radius:12px;background:var(--gold-bg);border:1px solid var(--gold-border);display:flex;align-items:center;justify-content:center">
+              <i data-lucide="{{ item.job.domain_icon }}" style="width:22px;height:22px;color:var(--gold-dark)"></i>
+            </div>
+            {% if forloop.counter <= 3 %}
+            <div style="position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:{% if forloop.counter == 1 %}#C9A84C{% elif forloop.counter == 2 %}#9CA3AF{% else %}#CD7F32{% endif %};color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid var(--white)">{{ forloop.counter }}</div>
+            {% endif %}
+          </div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:15px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ item.job.title }}</div>
+            <div style="font-size:13px;color:var(--text-2);margin-top:2px">{{ item.job.company }} · {{ item.job.location }}</div>
+            <div style="display:flex;gap:7px;margin-top:7px;align-items:center;flex-wrap:wrap">
+              <span class="badge badge-gray" style="font-size:11px">{{ item.job.get_job_type_display }}</span>
+              {% if item.job.salary_min %}<span class="badge badge-gold" style="font-size:11px">{{ item.job.salary_text }}</span>{% endif %}
+              <!-- Badge recruteur direct -->
+              {% if item.is_employer %}
+              <span style="font-size:11px;padding:2px 8px;border-radius:50px;font-weight:700;background:rgba(30,107,64,.08);border:1px solid rgba(30,107,64,.2);color:#1E6B40;display:flex;align-items:center;gap:3px">
+                <i data-lucide="building-2" style="width:11px;height:11px"></i> Recruteur direct
+              </span>
+              {% endif %}
+              <!-- Label de matching coloré -->
+              <span style="font-size:11px;padding:2px 8px;border-radius:50px;font-weight:700;
+                {% if item.color == 'green' %}background:var(--green-bg);color:#1E6B40
+                {% elif item.color == 'gold' %}background:var(--gold-bg);color:var(--gold-dark)
+                {% elif item.color == 'orange' %}background:rgba(217,119,6,.08);color:#D97706
+                {% else %}background:rgba(184,50,48,.08);color:var(--red){% endif %}">
+                {{ item.label }}
+              </span>
+              <!-- Âge de l'offre -->
+              {% if not item.is_employer %}
+              <span style="font-size:11px;color:{% if item.freshness >= 0.92 %}var(--green){% elif item.freshness >= 0.80 %}var(--text-3){% else %}#D97706{% endif %};display:flex;align-items:center;gap:3px">
+                <i data-lucide="clock" style="width:11px;height:11px"></i>
+                {{ item.job.days_ago }}{% if item.freshness < 0.80 %} · offre ancienne{% endif %}
+              </span>
+              {% endif %}
+            </div>
+          </div>
+          {% match_ring item.score 52 %}
+        </a>
+        {% empty %}
+        <div class="card card-p" style="text-align:center;padding:32px">
+          <i data-lucide="target" style="width:40px;height:40px;margin:0 auto 16px;display:block;color:var(--border-2)"></i>
+          <div style="font-size:16px;font-weight:700;margin-bottom:8px">Aucune offre correspondante pour l'instant</div>
+          <p style="font-size:14px;color:var(--text-3);margin-bottom:16px">Complétez votre profil (compétences, expériences) pour obtenir des recommandations personnalisées.</p>
+          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+            <a href="{% url 'accounts:profile' %}" class="btn btn-primary btn-sm">Compléter mon profil</a>
+            <a href="{% url 'jobs:list' %}" class="btn btn-secondary btn-sm">Voir toutes les offres</a>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Sidebar droite -->
+    <div style="display:grid;gap:20px">
+
+      <!-- Score profil -->
+      <div class="card card-p">
+        <div style="font-size:16px;font-weight:700;margin-bottom:16px">Force du profil</div>
+        <div style="display:flex;align-items:center;gap:18px">
+          {% match_ring profile_score 80 %}
+          <div style="flex:1">
+            {% if profile_score >= 80 %}
+              <div style="font-size:15px;font-weight:700;color:var(--green);margin-bottom:6px">Excellent profil</div>
+            {% elif profile_score >= 60 %}
+              <div style="font-size:15px;font-weight:700;color:var(--gold-dark);margin-bottom:6px">Bon profil</div>
+            {% else %}
+              <div style="font-size:15px;font-weight:700;margin-bottom:6px">Profil à compléter</div>
+            {% endif %}
+            <p style="font-size:14px;color:var(--text-2);line-height:1.65;margin-bottom:12px">
+              {% if profile_score < 80 %}Ajoutez expériences et compétences pour améliorer votre matching.{% else %}Votre profil est bien renseigné.{% endif %}
+            </p>
+            <a href="{% url 'accounts:profile' %}" class="btn btn-primary btn-sm">Améliorer mon profil</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Outils IA -->
+      <div class="card card-p card-gold">
+        <div style="font-size:16px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px">
+          <i data-lucide="sparkles" style="width:18px;height:18px;color:var(--gold-dark)"></i> Outils IA
+        </div>
+        <div style="display:grid;gap:8px">
+          {% for icon, label, url in ai_shortcuts %}
+          <a href="{{ url }}" style="display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--white);border:1px solid var(--border);border-radius:9px;text-decoration:none;font-size:15px;font-weight:600;color:var(--text);transition:all 0.2s" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold-dark)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text)'">
+            <i data-lucide="{{ icon }}" style="width:17px;height:17px;color:var(--gold-dark)"></i> {{ label }}
+          </a>
+          {% empty %}
+          <a href="{% url 'ai_tools:tools' %}" style="display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--white);border:1px solid var(--border);border-radius:9px;text-decoration:none;font-size:15px;font-weight:600;color:var(--text)"><i data-lucide="file-text" style="width:17px;height:17px;color:var(--gold-dark)"></i> Analyser mon CV</a>
+          <a href="{% url 'ai_tools:tools' %}" style="display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--white);border:1px solid var(--border);border-radius:9px;text-decoration:none;font-size:15px;font-weight:600;color:var(--text)"><i data-lucide="mic" style="width:17px;height:17px;color:var(--gold-dark)"></i> Coach entretien</a>
+          <a href="{% url 'ai_tools:tools' %}" style="display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--white);border:1px solid var(--border);border-radius:9px;text-decoration:none;font-size:15px;font-weight:600;color:var(--text)"><i data-lucide="banknote" style="width:17px;height:17px;color:var(--gold-dark)"></i> Conseil salaire</a>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Candidatures récentes -->
+      {% if recent_apps %}
+      <div class="card card-p">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <div style="font-size:16px;font-weight:700">Candidatures récentes</div>
+          <a href="{% url 'applications:history' %}" style="font-size:14px;color:var(--gold-dark);font-weight:600;text-decoration:none">Voir tout</a>
+        </div>
+        {% for app in recent_apps %}
+        <a href="{% url 'applications:detail' app.pk %}" onclick="markNotifRead()" style="display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border);text-decoration:none;transition:background 0.2s">
+          <div style="width:38px;height:38px;border-radius:9px;background:var(--gold-bg);border:1px solid var(--gold-border);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <i data-lucide="{{ app.job.domain_icon|default:'briefcase' }}" style="width:17px;height:17px;color:var(--gold-dark)"></i>
+          </div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:14px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ app.job.title }}</div>
+            <div style="font-size:13px;color:var(--text-3)">{{ app.job.company }}</div>
+          </div>
+          <span style="padding:4px 10px;border-radius:50px;font-size:12px;font-weight:700;background:{{ app.status_bg }};color:{{ app.status_text_color }};white-space:nowrap">{{ app.get_status_display }}</span>
+        </a>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- Recommandations profil -->
+      {% if analytics.recommendations %}
+      <div class="card card-p">
+        <div style="font-size:16px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px">
+          <i data-lucide="lightbulb" style="width:17px;height:17px;color:var(--gold-dark)"></i> Conseils personnalisés
+        </div>
+        {% for rec in analytics.recommendations|slice:":3" %}
+        <a href="{{ rec.url }}" style="display:flex;gap:12px;padding:12px;border-radius:10px;border:1px solid {% if rec.priority == 'high' %}rgba(184,50,48,0.2){% else %}var(--border){% endif %};background:{% if rec.priority == 'high' %}var(--red-bg){% else %}var(--cream-2){% endif %};text-decoration:none;margin-bottom:8px;transition:all 0.2s">
+          <i data-lucide="{{ rec.icon }}" style="width:18px;height:18px;flex-shrink:0;color:{% if rec.priority == 'high' %}var(--red){% else %}var(--gold-dark){% endif %};margin-top:2px"></i>
+          <div>
+            <div style="font-size:14px;font-weight:700;color:var(--text)">{{ rec.title }}</div>
+            <div style="font-size:13px;color:var(--text-2);margin-top:2px;line-height:1.5">{{ rec.desc }}</div>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Marquer les notifs comme lues quand on clique sur candidatures
+async function markNotifRead() {
+  try {
+    await fetch('/applications/notifications/read/', {
+      method:'POST', headers:{'X-CSRFToken':'{{ csrf_token }}'}
+    });
+    // Reset badge
+    var badge = document.getElementById('notif-badge');
+    if (badge) badge.remove();
+  } catch(e) {}
+}
+document.addEventListener('DOMContentLoaded', function() {
+  if (window.lucide) lucide.createIcons();
+});
+</script>
+{% endblock %}

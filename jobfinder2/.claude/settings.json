@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python generer_images.py)",
+      "Bash(python -c ':*)",
+      "Bash(python generer_svg.py)",
+      "Bash(python -m pip show django mysqlclient mysql-connector-python)",
+      "Bash(winget search:*)",
+      "Read(//c/wamp64/bin/mysql/mysql8.0.21/**)",
+      "Bash(python manage.py migrate)",
+      "Bash(python manage.py makemigrations)",
+      "Bash(python manage.py migrate --check)",
+      "Bash(python manage.py check)",
+      "Bash(python manage.py showmigrations)",
+      "Bash(where soffice *)",
+      "Read(//c/Program Files/LibreOffice/program/**)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\HP ELITEBOOK 1030 G4\\Desktop\\diagrams_jobfinder"
+    ]
+  }
+}

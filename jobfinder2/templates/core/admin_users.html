@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+{% block title %}Gestion Utilisateurs — Admin{% endblock %}
+{% block naus %}active{% endblock %}
+{% block content %}
+<div class="page-inner">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;margin-bottom:28px">
+    <div>
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--red);margin-bottom:8px;display:flex;align-items:center;gap:6px">
+        <i data-lucide="shield" style="width:14px;height:14px"></i> Administration
+      </div>
+      <h1 class="h1">Gestion des utilisateurs</h1>
+    </div>
+    <div style="display:flex;gap:8px">
+      <a href="{% url 'core:admin_dashboard' %}" class="btn btn-secondary btn-sm"><i data-lucide="layout-dashboard" style="width:14px;height:14px"></i> Dashboard</a>
+      <a href="{% url 'core:admin_jobs' %}" class="btn btn-secondary btn-sm"><i data-lucide="briefcase" style="width:14px;height:14px"></i> Offres</a>
+      <a href="{% url 'core:admin_scraping' %}" class="btn btn-secondary btn-sm"><i data-lucide="rss" style="width:14px;height:14px"></i> Scraping</a>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="grid-4" style="margin-bottom:24px">
+    <div class="card card-p" style="text-align:center">
+      <div style="font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:var(--gold-dark)">{{ stats.total }}</div>
+      <div style="font-size:12px;color:var(--text-3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-top:4px">Total</div>
+    </div>
+    <div class="card card-p" style="text-align:center">
+      <div style="font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:#1E6B40">{{ stats.active }}</div>
+      <div style="font-size:12px;color:var(--text-3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-top:4px">Actifs</div>
+    </div>
+    <div class="card card-p" style="text-align:center">
+      <div style="font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:var(--red)">{{ stats.staff }}</div>
+      <div style="font-size:12px;color:var(--text-3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-top:4px">Admins</div>
+    </div>
+    <div class="card card-p" style="text-align:center">
+      <div style="font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:var(--blue)">{{ stats.new_today }}</div>
+      <div style="font-size:12px;color:var(--text-3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-top:4px">Aujourd'hui</div>
+    </div>
+  </div>
+
+  <!-- Filtres -->
+  <div class="card card-p" style="margin-bottom:20px">
+    <form method="get" style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+      <input name="q" value="{{ q }}" placeholder="Rechercher par email ou nom…" class="form-input" style="flex:1;min-width:200px;max-width:320px">
+      <select name="role" class="form-input" style="min-width:150px">
+        {% for val, label in roles %}<option value="{{ val }}" {% if val == role %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+      <select name="plan" class="form-input" style="min-width:130px">
+        {% for val, label in plans %}<option value="{{ val }}" {% if val == plan %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+      <button type="submit" class="btn btn-primary btn-sm">Filtrer</button>
+      <a href="{% url 'core:admin_users' %}" class="btn btn-secondary btn-sm">Reset</a>
+    </form>
+  </div>
+
+  <!-- Table -->
+  <div class="card" style="overflow:hidden">
+    <div style="overflow-x:auto">
+      <div style="overflow-x:auto;-webkit-overflow-scrolling:touch"><table style="width:100%;border-collapse:collapse">
+        <thead>
+          <tr style="background:var(--bg-2);border-bottom:1px solid var(--border)">
+            <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text-3)">Utilisateur</th>
+            <th style="padding:12px 16px;text-align:center;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text-3)">Rôle</th>
+            <th style="padding:12px 16px;text-align:center;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text-3)">Plan</th>
+            <th style="padding:12px 16px;text-align:center;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text-3)">Inscrit le</th>
+            <th style="padding:12px 16px;text-align:center;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text-3)">Statut</th>
+            <th style="padding:12px 16px;text-align:center;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text-3)">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+          <tr style="border-bottom:1px solid var(--border)" id="user-row-{{ u.pk }}">
+            <td style="padding:14px 16px">
+              <div style="font-size:14px;font-weight:600;color:var(--text-1)">{{ u.get_full_name|default:"—" }}</div>
+              <div style="font-size:12px;color:var(--text-3)">{{ u.email }}</div>
+            </td>
+            <td style="padding:14px 16px;text-align:center">
+              <span style="font-size:11px;padding:3px 8px;border-radius:12px;font-weight:600;
+                {% if u.role == 'employer' %}background:var(--blue-bg);color:var(--blue)
+                {% elif u.is_staff %}background:rgba(184,50,48,.08);color:var(--red)
+                {% else %}background:var(--gold-bg);color:var(--gold-dark){% endif %}">
+                {% if u.is_staff %}Admin{% else %}{{ u.get_role_display }}{% endif %}
+              </span>
+            </td>
+            <td style="padding:14px 16px;text-align:center">
+              <span style="font-size:11px;color:var(--text-3);font-weight:600">{{ u.plan|upper }}</span>
+            </td>
+            <td style="padding:14px 16px;text-align:center;font-size:12px;color:var(--text-3)">
+              {{ u.date_joined|date:"d/m/Y" }}
+            </td>
+            <td style="padding:14px 16px;text-align:center">
+              <span id="status-badge-{{ u.pk }}" style="font-size:11px;padding:3px 8px;border-radius:12px;font-weight:600;
+                {% if u.is_active %}background:var(--green-bg);color:#1E6B40{% else %}background:rgba(184,50,48,.08);color:var(--red){% endif %}">
+                {% if u.is_active %}Actif{% else %}Inactif{% endif %}
+              </span>
+            </td>
+            <td style="padding:14px 16px;text-align:center">
+              {% if not u.is_superuser %}
+              <button onclick="toggleUser({{ u.pk }}, this)"
+                style="font-size:11px;padding:4px 10px;border-radius:8px;border:1px solid var(--border);background:transparent;cursor:pointer;color:var(--text-2);font-weight:600">
+                {% if u.is_active %}Désactiver{% else %}Activer{% endif %}
+              </button>
+              {% else %}
+              <span style="font-size:11px;color:var(--text-3)">Superadmin</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="6" style="padding:32px;text-align:center;color:var(--text-3)">Aucun utilisateur trouvé.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table></div>
+    </div>
+    {% if users.has_other_pages %}
+    <div style="padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:center">
+      {% if users.has_previous %}
+      <a href="?page={{ users.previous_page_number }}&q={{ q }}&role={{ role }}&plan={{ plan }}" class="btn btn-secondary btn-sm">‹ Préc.</a>
+      {% endif %}
+      <span style="padding:6px 12px;font-size:13px;color:var(--text-3)">Page {{ users.number }}/{{ users.paginator.num_pages }}</span>
+      {% if users.has_next %}
+      <a href="?page={{ users.next_page_number }}&q={{ q }}&role={{ role }}&plan={{ plan }}" class="btn btn-secondary btn-sm">Suiv. ›</a>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+<script>
+const CSRF = '{{ csrf_token }}';
+async function toggleUser(pk, btn) {
+  const res = await fetch(`/gestion/user/${pk}/toggle/`, {method:'POST', headers:{'X-CSRFToken':CSRF,'Content-Type':'application/json'}});
+  const data = await res.json();
+  if (data.ok) {
+    const badge = document.getElementById(`status-badge-${pk}`);
+    if (data.active) {
+      badge.textContent = 'Actif'; badge.style.background = 'var(--green-bg)'; badge.style.color = '#1E6B40';
+      btn.textContent = 'Désactiver';
+    } else {
+      badge.textContent = 'Inactif'; badge.style.background = 'rgba(184,50,48,.08)'; badge.style.color = 'var(--red)';
+      btn.textContent = 'Activer';
+    }
+  }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% load tags %}
+{% block title %}Candidature envoyée — JobFinder AI{% endblock %}
+{% block nj %}active{% endblock %}
+
+{% block content %}
+<div class="page-inner">
+  <div style="max-width:600px;margin:60px auto;text-align:center;padding:40px;background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg)">
+    
+    <!-- Icône succès -->
+    <div style="width:80px;height:80px;margin:0 auto 24px;border-radius:50%;background:linear-gradient(135deg,rgba(46,168,79,0.1),rgba(46,168,79,0.05));border:2px solid var(--green);display:flex;align-items:center;justify-content:center;font-size:36px">
+      <i data-lucide="check-circle" style="width:40px;height:40px;color:var(--green)"></i>
+    </div>
+
+    <!-- Message succès -->
+    <h1 style="font-family:'Playfair Display',serif;font-size:26px;font-weight:700;margin-bottom:12px">Candidature envoyée ! 🎉</h1>
+    <p style="color:var(--text-2);font-size:15px;margin-bottom:20px">Votre candidature pour <strong>{{ job.title }}</strong> chez <strong>{{ job.company }}</strong> a été enregistrée avec succès.</p>
+
+    <!-- Détails -->
+    <div style="background:var(--cream-2);border:1px solid var(--border);border-radius:var(--r-sm);padding:20px;margin-bottom:24px;text-align:left">
+      <div style="display:grid;gap:12px;font-size:14px">
+        <div style="display:flex;justify-content:space-between">
+          <span style="color:var(--text-3)">Poste</span>
+          <strong>{{ job.title }}</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;border-top:1px solid var(--border);padding-top:12px">
+          <span style="color:var(--text-3)">Entreprise</span>
+          <strong>{{ job.company }}</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;border-top:1px solid var(--border);padding-top:12px">
+          <span style="color:var(--text-3)">Localisation</span>
+          <strong>{{ job.location }}</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;border-top:1px solid var(--border);padding-top:12px">
+          <span style="color:var(--text-3)">Statut</span>
+          <span style="padding:4px 10px;background:var(--blue-bg);border:1px solid var(--blue-border);border-radius:6px;color:var(--blue);font-weight:600;font-size:12px">Envoyée</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions suivantes -->
+    <div style="background:var(--orange-bg);border:1px solid var(--orange-border);border-radius:var(--r-sm);padding:16px;margin-bottom:28px;text-align:left">
+      <div style="font-weight:700;color:var(--orange-dark);margin-bottom:10px;display:flex;align-items:center;gap:8px">
+        <i data-lucide="lightbulb" style="width:18px;height:18px"></i> Prochaines étapes
+      </div>
+      <ul style="list-style:none;padding:0;margin:0;display:grid;gap:8px;font-size:13px;color:var(--text-2)">
+        <li>✓ Consultez régulièrement votre <a href="{% url 'applications:history' %}" style="color:var(--orange-dark);font-weight:600">historique de candidatures</a></li>
+        <li>✓ Continuez à explorer d'autres <a href="{% url 'jobs:list' %}" style="color:var(--orange-dark);font-weight:600">offres d'emploi</a></li>
+        <li>✓ Complétez votre <a href="{% url 'accounts:profile' %}" style="color:var(--orange-dark);font-weight:600">profil</a> pour augmenter vos chances</li>
+      </ul>
+    </div>
+
+    <!-- Boutons -->
+    <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">
+      <a href="{% url 'jobs:detail' job.pk %}" class="btn btn-secondary">
+        <i data-lucide="arrow-left" style="width:16px;height:16px;margin-right:6px;display:inline"></i> Retour à l'offre
+      </a>
+      <a href="{% url 'jobs:list' %}" class="btn btn-primary">
+        <i data-lucide="briefcase" style="width:16px;height:16px;margin-right:6px;display:inline"></i> Voir plus d'offres
+      </a>
+      <a href="{% url 'applications:history' %}" class="btn btn-secondary">
+        <i data-lucide="file-text" style="width:16px;height:16px;margin-right:6px;display:inline"></i> Mes candidatures
+      </a>
+    </div>
+
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Mettre à jour le badge du nombre de candidatures dans le header
+  const candBadge = document.getElementById('cand-badge');
+  if (candBadge) {
+    const currentCount = parseInt(candBadge.textContent) || 0;
+    candBadge.textContent = currentCount + 1;
+  } else {
+    // Si le badge n'existe pas, le créer
+    const candLink = document.querySelector('a[href*="/applications/"]');
+    if (candLink && !candLink.querySelector('.nav-badge')) {
+      const badge = document.createElement('span');
+      badge.className = 'nav-badge';
+      badge.id = 'cand-badge';
+      badge.textContent = '1';
+      candLink.appendChild(badge);
+    }
+  }
+  
+  // Initialiser les icones lucide
+  if (window.lucide) {
+    lucide.createIcons();
+  }
+});
+</script>
+{% endblock %}

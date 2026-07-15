@@ -1,0 +1,343 @@
+{% extends 'base.html' %}
+{% load tags %}
+{% block title %}Candidatures — {{ job.title }}{% endblock %}
+{% block ne %}active{% endblock %}
+
+{% block content %}
+<div class="page-inner">
+
+  <!-- Header -->
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;margin-bottom:28px">
+    <div>
+      <a href="{% url 'employers:dashboard' %}" style="font-size:14px;font-weight:600;color:var(--text-3);text-decoration:none;display:inline-flex;align-items:center;gap:6px;margin-bottom:10px">
+        <i data-lucide="arrow-left" style="width:15px;height:15px"></i> Mes offres
+      </a>
+      <h1 class="h1">{{ job.title }}</h1>
+      <p class="body" style="color:var(--text-3);margin-top:4px">{{ job.company }} · {{ job.location }}</p>
+    </div>
+    <a href="{% url 'jobs:detail' job.pk %}" class="btn btn-secondary btn-sm">
+      <i data-lucide="eye" style="width:15px;height:15px"></i> Voir l'offre
+    </a>
+  </div>
+
+  <!-- Stats -->
+  <div class="grid-4" style="margin-bottom:28px">
+    <div class="card card-p" style="text-align:center">
+      <div class="stat-number">{{ stats.total }}</div>
+      <div class="stat-label">Total</div>
+    </div>
+    <div class="card card-p" style="text-align:center">
+      <div class="stat-number" style="color:var(--blue)">{{ stats.new }}</div>
+      <div class="stat-label">Nouvelles</div>
+    </div>
+    <div class="card card-p" style="text-align:center">
+      <div class="stat-number" style="color:var(--gold-dark)">{{ stats.interview }}</div>
+      <div class="stat-label">Entretiens</div>
+    </div>
+    <div class="card card-p" style="text-align:center">
+      <div class="stat-number" style="color:var(--green)">{{ stats.accepted }}</div>
+      <div class="stat-label">Acceptées</div>
+    </div>
+  </div>
+
+  <!-- Liste candidatures -->
+  <div style="display:grid;gap:14px">
+    {% for app in apps %}
+    <div class="card" id="app-card-{{ app.pk }}" style="padding:22px 26px">
+      <div style="display:flex;align-items:flex-start;gap:18px;flex-wrap:wrap">
+
+        <!-- Avatar candidat -->
+        <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-dark));display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:white;flex-shrink:0">
+          {{ app.user.first_name|first|upper|default:"?" }}
+        </div>
+
+        <!-- Infos candidat -->
+        <div style="flex:1;min-width:200px">
+          <div style="font-size:17px;font-weight:700">{{ app.user.get_full_name|default:app.user.email }}</div>
+          <div style="font-size:14px;color:var(--text-3);margin-top:2px">{{ app.user.email }}</div>
+          {% with p=app.user.profile %}
+          {% if p.desired_title %}<div style="font-size:14px;color:var(--text-2);margin-top:4px;font-weight:500">{{ p.desired_title }}</div>{% endif %}
+          {% if p.location %}<div style="font-size:13px;color:var(--text-3)"><i data-lucide="map-pin" style="width:13px;height:13px"></i> {{ p.location }}</div>{% endif %}
+          <!-- Skills -->
+          {% with skills=p.skills.all %}
+          {% if skills %}
+          <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:5px">
+            {% for sk in skills|slice:":5" %}
+            <span style="padding:2px 9px;background:var(--gold-bg);border:1px solid var(--gold-border);border-radius:5px;font-size:12px;font-weight:600;color:var(--gold-dark)">{{ sk.name }}</span>
+            {% endfor %}
+            {% if skills.count > 5 %}<span style="font-size:12px;color:var(--text-3);padding:2px 6px">+{{ skills.count|add:"-5" }}</span>{% endif %}
+          </div>
+          {% endif %}
+          {% endwith %}
+          {% endwith %}
+          <div style="font-size:13px;color:var(--text-3);margin-top:8px">
+            <i data-lucide="calendar" style="width:13px;height:13px"></i> Postulé le {{ app.applied_at|date:"d M Y à H:i" }}
+          </div>
+          {% if app.cover_message %}
+          <div style="margin-top:10px;padding:12px 14px;background:rgba(255,252,235,0.7);border:1px solid var(--border);border-radius:10px;font-size:14px;color:var(--text-2);line-height:1.65;font-style:italic">
+            "{{ app.cover_message|truncatechars:200 }}"
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Score matching + Statut + Actions -->
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:12px;flex-shrink:0">
+          <!-- Score matching candidat ↔ offre -->
+          {% with s=match_map|get_item:app.user_id %}
+          {% match_ring s|default:0 52 %}
+          <div style="font-size:11px;color:var(--text-3);text-align:center;margin-top:-6px">compatibilité</div>
+          {% endwith %}
+          <!-- Badge statut actuel -->
+          <span id="status-badge-{{ app.pk }}" style="padding:6px 14px;border-radius:50px;font-size:13px;font-weight:700;background:{{ app.status_bg }};color:{{ app.status_text_color }};border:1px solid {{ app.status_text_color }}33">
+            <i data-lucide="{{ app.status_icon }}" style="width:13px;height:13px"></i>
+            {{ app.get_status_display }}
+          </span>
+
+          <!-- Boutons actions rapides -->
+          <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+            <a href="/employers/candidat/{{ app.user.pk }}/" class="btn btn-secondary btn-sm">
+              <i data-lucide="user" style="width:14px;height:14px"></i> Voir profil
+            </a>
+            {% with p=app.user.profile %}
+            {% if p.cv_file %}
+            <a href="{{ p.cv_file.url }}" target="_blank" class="btn btn-secondary btn-sm">
+              <i data-lucide="file-text" style="width:14px;height:14px"></i> CV
+            </a>
+            {% endif %}
+            {% endwith %}
+
+            <button onclick="openStatusModal({{ app.pk }}, '{{ app.status }}')" class="btn btn-primary btn-sm">
+              <i data-lucide="edit-3" style="width:14px;height:14px"></i> Changer statut
+            </button>
+
+            <button onclick="toggleMessages({{ app.pk }})" class="btn btn-secondary btn-sm">
+              <i data-lucide="message-circle" style="width:14px;height:14px"></i>
+              Messages {% if app.messages.count %}<span style="background:var(--gold);color:white;border-radius:50%;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;margin-left:4px">{{ app.messages.count }}</span>{% endif %}
+            </button>
+          </div>
+
+          {% if app.interview_date %}
+          <div style="font-size:13px;color:var(--gold-dark);font-weight:600">
+            <i data-lucide="calendar-check" style="width:13px;height:13px"></i>
+            Entretien: {{ app.interview_date|date:"d M Y à H:i" }}
+          </div>
+          {% endif %}
+
+          {% if app.recruiter_note %}
+          <div style="font-size:12px;color:var(--text-3);max-width:220px;text-align:right;font-style:italic">
+            Note: {{ app.recruiter_note|truncatechars:80 }}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Zone messages (cachée par défaut) -->
+      <div id="messages-{{ app.pk }}" style="display:none;margin-top:18px;padding-top:18px;border-top:1px solid var(--border)">
+        <div style="font-size:14px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:6px">
+          <i data-lucide="message-circle" style="width:16px;height:16px;color:var(--gold-dark)"></i>
+          Messagerie avec {{ app.user.get_full_name|default:app.user.email }}
+        </div>
+        <div id="msgs-list-{{ app.pk }}" style="max-height:240px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;margin-bottom:12px;padding:8px;background:rgba(255,252,235,0.5);border-radius:10px;border:1px solid var(--border)">
+          {% for msg in app.messages.all %}
+          <div style="display:flex;{% if msg.sender == request.user %}justify-content:flex-end{% endif %}">
+            <div style="max-width:70%;padding:10px 14px;border-radius:12px;font-size:14px;line-height:1.6;{% if msg.sender == request.user %}background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:white;border-bottom-right-radius:4px{% else %}background:white;border:1px solid var(--border);color:var(--text);border-bottom-left-radius:4px{% endif %}">
+              <div>{{ msg.content }}</div>
+              <div style="font-size:11px;margin-top:4px;opacity:0.7">{{ msg.sent_at|date:"d/m H:i" }}</div>
+            </div>
+          </div>
+          {% empty %}
+          <div style="text-align:center;color:var(--text-3);font-size:14px;padding:12px">Aucun message pour l'instant.</div>
+          {% endfor %}
+        </div>
+        <div style="display:flex;gap:10px">
+          <input id="msg-input-{{ app.pk }}" class="form-input" placeholder="Écrire un message…" style="flex:1;padding:10px 14px" onkeydown="if(event.key==='Enter')sendMsg({{ app.pk }})"/>
+          <button onclick="sendMsg({{ app.pk }})" class="btn btn-primary btn-sm">
+            <i data-lucide="send" style="width:15px;height:15px"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <div class="card card-p" style="text-align:center;padding:72px">
+      <i data-lucide="inbox" style="width:48px;height:48px;color:var(--border-2);margin-bottom:16px"></i>
+      <div class="h3" style="margin-bottom:10px">Aucune candidature reçue</div>
+      <p class="body" style="color:var(--text-3)">Les candidatures apparaîtront ici dès que des candidats postuleront.</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- MODAL CHANGEMENT STATUT -->
+<div id="status-modal" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;padding:24px">
+  <div class="card" style="width:100%;max-width:480px;padding:28px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div style="font-size:18px;font-weight:700">Mettre à jour le statut</div>
+      <button onclick="closeStatusModal()" style="background:none;border:none;cursor:pointer;color:var(--text-3)">
+        <i data-lucide="x" style="width:20px;height:20px"></i>
+      </button>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Nouveau statut</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px" id="status-options">
+        {% for val, label in choices %}
+        <button onclick="selectStatus('{{ val }}')" data-status="{{ val }}"
+          class="status-opt btn btn-secondary btn-sm" style="justify-content:flex-start;gap:8px">
+          <i data-lucide="circle" style="width:8px;height:8px;fill:currentColor"></i>
+          {{ label }}
+        </button>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="form-group" id="interview-date-group" style="display:none">
+      <label class="form-label">Date et heure de l'entretien</label>
+      <input type="datetime-local" class="form-input" id="interview-date-input"/>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Note interne (optionnel)</label>
+      <textarea class="form-input" id="recruiter-note" rows="3" placeholder="Note visible uniquement par vous…"></textarea>
+    </div>
+
+    <div style="display:flex;gap:10px">
+      <button onclick="submitStatus()" class="btn btn-primary" style="flex:1">Confirmer</button>
+      <button onclick="closeStatusModal()" class="btn btn-secondary">Annuler</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<style>
+@keyframes slideIn {
+  from { transform: translateX(400px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+@keyframes slideOut {
+  from { transform: translateX(0); opacity: 1; }
+  to { transform: translateX(400px); opacity: 0; }
+}
+</style>
+<script>
+const AI_CSRF = '{{ csrf_token }}';
+let currentAppPk = null;
+let selectedStatus = null;
+
+const statusColors = {
+  'sent':'var(--blue)','viewed':'var(--blue)','pending':'var(--orange)',
+  'interview':'var(--gold-dark)','offer':'var(--green)','accepted':'var(--green)',
+  'rejected':'var(--red)','withdrawn':'var(--text-3)'
+};
+
+function openStatusModal(pk, currentStatus) {
+  currentAppPk  = pk;
+  selectedStatus = currentStatus;
+  document.getElementById('recruiter-note').value = '';
+  document.getElementById('interview-date-input').value = '';
+  document.getElementById('interview-date-group').style.display = 'none';
+
+  // Highlight current status
+  document.querySelectorAll('.status-opt').forEach(function(btn) {
+    var s = btn.dataset.status;
+    btn.style.borderColor = s === currentStatus ? 'var(--gold)' : '';
+    btn.style.color = s === currentStatus ? 'var(--gold-dark)' : '';
+    btn.style.background = s === currentStatus ? 'var(--gold-bg)' : '';
+  });
+
+  var modal = document.getElementById('status-modal');
+  modal.style.display = 'flex';
+  if (window.lucide) lucide.createIcons();
+}
+
+function closeStatusModal() {
+  document.getElementById('status-modal').style.display = 'none';
+  currentAppPk = null;
+  selectedStatus = null;
+}
+
+function selectStatus(val) {
+  selectedStatus = val;
+  document.querySelectorAll('.status-opt').forEach(function(btn) {
+    var active = btn.dataset.status === val;
+    btn.style.borderColor = active ? 'var(--gold)' : '';
+    btn.style.color = active ? 'var(--gold-dark)' : '';
+    btn.style.background = active ? 'var(--gold-bg)' : '';
+  });
+  document.getElementById('interview-date-group').style.display = val === 'interview' ? 'block' : 'none';
+}
+
+async function submitStatus() {
+  if (!currentAppPk || !selectedStatus) return;
+  var payload = {
+    status:    selectedStatus,
+    note:      document.getElementById('recruiter-note').value,
+    interview_date: document.getElementById('interview-date-input').value || '',
+  };
+  var r = await fetch('/applications/' + currentAppPk + '/status/', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json','X-CSRFToken': AI_CSRF},
+    body: JSON.stringify(payload)
+  });
+  var d = await r.json();
+  if (d.ok) {
+    var badge = document.getElementById('status-badge-' + currentAppPk);
+    if (badge) {
+      badge.textContent = d.label;
+      badge.style.color = d.color;
+      badge.style.background = d.bg;
+      badge.style.borderColor = d.color + '33';
+    }
+    closeStatusModal();
+    // Flash card
+    var card = document.getElementById('app-card-' + currentAppPk);
+    if (card) {
+      card.style.boxShadow = '0 0 0 2px var(--green)';
+      setTimeout(function() { card.style.boxShadow = ''; }, 1500);
+    }
+    // Toast notification pour acceptance
+    if (d.toast_msg) {
+      var toast = document.createElement('div');
+      toast.style.cssText = 'position:fixed;bottom:24px;right:24px;background:linear-gradient(135deg,var(--green),var(--green-dark));color:white;padding:16px 24px;border-radius:12px;font-size:15px;font-weight:600;display:flex;align-items:center;gap:12px;box-shadow:0 8px 24px rgba(0,0,0,0.15);z-index:10000;animation:slideIn 0.3s ease;max-width:400px';
+      toast.innerHTML = '<i data-lucide="check-circle" style="width:20px;height:20px;flex-shrink:0"></i><div>' + d.toast_msg + '</div>';
+      document.body.appendChild(toast);
+      if (window.lucide) lucide.createIcons();
+      setTimeout(function() {
+        toast.style.animation = 'slideOut 0.3s ease';
+        setTimeout(function() { toast.remove(); }, 300);
+      }, 3500);
+    }
+  } else {
+    alert(d.msg || 'Erreur');
+  }
+}
+
+function toggleMessages(pk) {
+  var el = document.getElementById('messages-' + pk);
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+async function sendMsg(appPk) {
+  var input   = document.getElementById('msg-input-' + appPk);
+  var content = input.value.trim();
+  if (!content) return;
+  input.value = '';
+  var r = await fetch('/applications/' + appPk + '/message/', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json','X-CSRFToken': AI_CSRF},
+    body: JSON.stringify({content: content})
+  });
+  var d = await r.json();
+  if (d.ok) {
+    var list = document.getElementById('msgs-list-' + appPk);
+    var m    = d.message;
+    list.innerHTML += '<div style="display:flex;justify-content:flex-end"><div style="max-width:70%;padding:10px 14px;border-radius:12px;font-size:14px;line-height:1.6;background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:white;border-bottom-right-radius:4px"><div>' + m.content + '</div><div style="font-size:11px;margin-top:4px;opacity:0.7">' + m.sent_at + '</div></div></div>';
+    list.scrollTop = list.scrollHeight;
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  if (window.lucide) lucide.createIcons();
+});
+</script>
+{% endblock %}

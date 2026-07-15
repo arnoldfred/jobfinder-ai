@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+{% block title %}Gestion des offres — Admin{% endblock %}
+{% block naof %}active{% endblock %}
+{% block content %}
+<div class="page-inner">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:24px">
+    <div>
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--red);margin-bottom:4px">
+        <a href="{% url 'core:admin_dashboard' %}" style="color:inherit">Admin</a> / Offres
+      </div>
+      <h1 class="h1">Gestion des offres <span style="font-size:16px;font-weight:600;color:var(--text-3)">({{ stats.total }} total)</span></h1>
+    </div>
+    <div style="display:flex;gap:8px">
+      <a href="{% url 'core:admin_scraping' %}" class="btn btn-secondary btn-sm"><i data-lucide="refresh-cw" style="width:14px;height:14px"></i> Scraping</a>
+      <a href="{% url 'core:admin_dashboard' %}" class="btn btn-secondary btn-sm"><i data-lucide="arrow-left" style="width:14px;height:14px"></i> Admin</a>
+    </div>
+  </div>
+
+  <!-- Pills de filtre rapide -->
+  <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+    {% with s=filters.status src=filters.source %}
+    <a href="?status=active" class="tag" style="font-size:13px;padding:8px 14px;{% if s == 'active' and not src %}background:var(--green-bg);border-color:var(--green-border);color:var(--green);font-weight:700{% endif %}">
+      <i data-lucide="check-circle" style="width:13px;height:13px"></i> {{ stats.active }} actives
+    </a>
+    <a href="?status=inactive" class="tag" style="font-size:13px;padding:8px 14px;{% if s == 'inactive' %}background:rgba(184,50,48,.08);border-color:rgba(184,50,48,.2);color:var(--red);font-weight:700{% endif %}">
+      <i data-lucide="x-circle" style="width:13px;height:13px"></i> {{ stats.inactive }} inactives
+    </a>
+    <a href="?source=employer" class="tag" style="font-size:13px;padding:8px 14px;{% if src == 'employer' %}background:var(--blue-bg);border-color:rgba(26,78,122,.2);color:var(--blue);font-weight:700{% endif %}">
+      <i data-lucide="building-2" style="width:13px;height:13px"></i> {{ stats.employer }} employeurs
+    </a>
+    <a href="?source=scraping" class="tag" style="font-size:13px;padding:8px 14px;{% if src == 'scraping' %}background:var(--gold-bg);border-color:var(--gold-border);color:var(--gold-dark);font-weight:700{% endif %}">
+      <i data-lucide="globe" style="width:13px;height:13px"></i> {{ stats.scraped }} scrapées
+    </a>
+    <a href="?" class="tag" style="font-size:13px;padding:8px 14px;{% if not s and not src %}background:var(--bg-2);border-color:var(--border-2);font-weight:700{% endif %}">
+      Tout ({{ stats.total }})
+    </a>
+    {% endwith %}
+  </div>
+
+  <!-- Filtres texte / domaine / source -->
+  <form method="get" style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+    {% if filters.status %}<input type="hidden" name="status" value="{{ filters.status }}">{% endif %}
+    {% if filters.source %}<input type="hidden" name="source" value="{{ filters.source }}">{% endif %}
+    <input name="q" value="{{ filters.q }}" placeholder="Rechercher titre, company..." class="form-input" style="flex:1;min-width:200px">
+    <select name="domain" class="form-input" style="width:160px">
+      <option value="">Tous domaines</option>
+      {% for code,label in domains %}<option value="{{ code }}" {% if filters.domain == code %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+    <button type="submit" class="btn btn-primary btn-sm"><i data-lucide="search" style="width:14px;height:14px"></i> Filtrer</button>
+    {% if filters.q or filters.domain %}<a href="?{% if filters.status %}status={{ filters.status }}{% endif %}{% if filters.source %}&source={{ filters.source }}{% endif %}" class="btn btn-secondary btn-sm">Effacer</a>{% endif %}
+  </form>
+
+  <!-- Table -->
+  <div class="card" style="overflow:hidden">
+    <div style="overflow-x:auto">
+      <div style="overflow-x:auto;-webkit-overflow-scrolling:touch"><table style="width:100%;border-collapse:collapse">
+        <thead>
+          <tr style="background:var(--bg-2);border-bottom:2px solid var(--border)">
+            <th style="padding:12px 16px;text-align:left;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-3)">Offre</th>
+            <th style="padding:12px 16px;text-align:left;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-3)">Source</th>
+            <th style="padding:12px 16px;text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-3)">Statut</th>
+            <th style="padding:12px 16px;text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-3)">Vues</th>
+            <th style="padding:12px 16px;text-align:right;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-3)">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for job in page_obj %}
+          <tr style="border-bottom:1px solid var(--border-light)" id="job-{{ job.pk }}">
+            <td style="padding:12px 16px">
+              <div style="font-size:14px;font-weight:700;color:var(--text-1)">{{ job.title|truncatechars:50 }}</div>
+              <div style="font-size:12px;color:var(--text-3);margin-top:2px">{{ job.company }} · {{ job.location }}</div>
+              <div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap">
+                <span class="tag" style="font-size:11px">{{ job.get_domain_display }}</span>
+                <span class="tag" style="font-size:11px">{{ job.get_job_type_display }}</span>
+                {% if job.is_featured %}<span class="tag" style="font-size:11px;background:var(--gold-bg);border-color:var(--gold-border);color:var(--gold-dark)">⭐ Vedette</span>{% endif %}
+                {% if job.is_verified %}<span class="tag" style="font-size:11px;background:var(--green-bg);border-color:var(--green-border);color:var(--green)">✓ Vérifiée</span>{% endif %}
+              </div>
+            </td>
+            <td style="padding:12px 16px">
+              <div style="font-size:12px;color:var(--text-2)">{{ job.get_source_type_display }}</div>
+              <div style="font-size:11px;color:var(--text-3)">{{ job.posted_at|date:"d/m/Y" }}</div>
+            </td>
+            <td style="padding:12px 16px;text-align:center">
+              <button onclick="toggleJob({{ job.pk }}, this)" class="tag" style="cursor:pointer;border:none;font-size:12px;padding:5px 10px;{% if job.is_active %}background:var(--green-bg);border:1px solid var(--green-border);color:var(--green){% else %}background:rgba(184,50,48,.08);border:1px solid rgba(184,50,48,.2);color:var(--red){% endif %}">
+                {% if job.is_active %}Actif{% else %}Inactif{% endif %}
+              </button>
+            </td>
+            <td style="padding:12px 16px;text-align:center;font-size:14px;font-weight:700;color:var(--text-2)">{{ job.view_count }}</td>
+            <td style="padding:12px 16px;text-align:right">
+              <div style="display:flex;gap:6px;justify-content:flex-end">
+                <a href="{% url 'jobs:detail' job.pk %}" target="_blank" class="btn btn-secondary btn-sm" style="padding:4px 8px" title="Voir"><i data-lucide="eye" style="width:13px;height:13px"></i></a>
+                <button onclick="verifyJob({{ job.pk }}, this)" class="btn btn-secondary btn-sm" style="padding:4px 8px;{% if job.is_verified %}color:var(--green){% endif %}" title="{% if job.is_verified %}Retirer vérification{% else %}Vérifier{% endif %}"><i data-lucide="check" style="width:13px;height:13px"></i></button>
+                <button onclick="featureJob({{ job.pk }}, this)" class="btn btn-secondary btn-sm" style="padding:4px 8px;{% if job.is_featured %}color:var(--gold-dark){% endif %}" title="Vedette"><i data-lucide="star" style="width:13px;height:13px"></i></button>
+                <button onclick="deleteJob({{ job.pk }})" class="btn btn-secondary btn-sm" style="padding:4px 8px;color:var(--red)" title="Supprimer"><i data-lucide="trash-2" style="width:13px;height:13px"></i></button>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="5" style="padding:60px;text-align:center;color:var(--text-3)">
+            <i data-lucide="inbox" style="width:40px;height:40px;margin-bottom:12px;opacity:0.3"></i><br>
+            Aucune offre trouvée.
+          </td></tr>
+          {% endfor %}
+        </tbody>
+      </table></div>
+    </div>
+    {% if page_obj.has_other_pages %}
+    <div style="display:flex;justify-content:center;gap:8px;padding:16px;border-top:1px solid var(--border-light)">
+      {% if page_obj.has_previous %}
+      <a href="?page={{ page_obj.previous_page_number }}{% if filters.status %}&status={{ filters.status }}{% endif %}{% if filters.source %}&source={{ filters.source }}{% endif %}{% if filters.q %}&q={{ filters.q }}{% endif %}{% if filters.domain %}&domain={{ filters.domain }}{% endif %}" class="btn btn-secondary btn-sm">← Préc.</a>
+      {% endif %}
+      <span style="padding:6px 12px;font-size:13px;font-weight:600">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+      {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}{% if filters.status %}&status={{ filters.status }}{% endif %}{% if filters.source %}&source={{ filters.source }}{% endif %}{% if filters.q %}&q={{ filters.q }}{% endif %}{% if filters.domain %}&domain={{ filters.domain }}{% endif %}" class="btn btn-secondary btn-sm">Suiv. →</a>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+const csrfToken = '{{ csrf_token }}';
+
+function adminPost(url, onSuccess) {
+  fetch(url, {method:'POST',headers:{'X-CSRFToken':csrfToken}})
+    .then(r=>r.json()).then(onSuccess);
+}
+
+function toggleJob(pk, btn) {
+  adminPost('/gestion/job/'+pk+'/toggle/', data => {
+    btn.textContent = data.active ? 'Actif' : 'Inactif';
+    btn.style.background  = data.active ? 'var(--green-bg)'          : 'rgba(184,50,48,.08)';
+    btn.style.borderColor = data.active ? 'var(--green-border)'       : 'rgba(184,50,48,.2)';
+    btn.style.color       = data.active ? 'var(--green)'              : 'var(--red)';
+  });
+}
+
+function verifyJob(pk, btn) {
+  adminPost('/gestion/job/'+pk+'/verify/', data => {
+    btn.style.color = data.verified ? 'var(--green)' : '';
+    btn.title = data.verified ? 'Retirer vérification' : 'Vérifier';
+  });
+}
+
+function featureJob(pk, btn) {
+  adminPost('/gestion/job/'+pk+'/feature/', data => {
+    btn.style.color = data.featured ? 'var(--gold-dark)' : '';
+  });
+}
+
+function deleteJob(pk) {
+  if (!confirm('Supprimer cette offre définitivement ?')) return;
+  adminPost('/gestion/job/'+pk+'/delete/', data => {
+    if (data.ok) document.getElementById('job-'+pk).remove();
+  });
+}
+</script>
+{% endblock %}

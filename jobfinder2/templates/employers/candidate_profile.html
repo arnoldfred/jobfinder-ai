@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+{% load tags %}
+{% block title %}Profil — {{ candidate.get_full_name }} — JobFinder AI{% endblock %}
+{% block ne %}active{% endblock %}
+
+{% block content %}
+<div class="page-inner container-sm">
+  <a href="{% url 'employers:dashboard' %}" style="display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:600;color:var(--text-3);text-decoration:none;margin-bottom:20px">
+    <i data-lucide="arrow-left" style="width:15px;height:15px"></i> Retour
+  </a>
+
+  <!-- EN-TÊTE -->
+  <div class="card card-p" style="margin-bottom:20px;display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+    <div>
+      {% if profile and profile.avatar %}
+        <img src="{{ profile.avatar.url }}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid var(--gold)"/>
+      {% else %}
+        <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-dark));display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:white">{{ candidate.first_name|first|upper|default:"?" }}</div>
+      {% endif %}
+    </div>
+    <div style="flex:1">
+      <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700">{{ candidate.get_full_name|default:candidate.email }}</div>
+      {% if profile %}<div style="font-size:16px;color:var(--text-2);margin-top:3px">{{ profile.desired_title|default:"Titre non renseigné" }}</div>{% endif %}
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">
+        {% if profile and profile.location %}<span class="badge badge-gray"><i data-lucide="map-pin" style="width:12px;height:12px"></i> {{ profile.location }}</span>{% endif %}
+        {% if profile and profile.linkedin_url %}<a href="{{ profile.linkedin_url }}" target="_blank" class="badge badge-blue"><i data-lucide="linkedin" style="width:12px;height:12px"></i> LinkedIn</a>{% endif %}
+        {% if profile %}<span class="badge badge-gold">Profil {{ profile.completion_score }}% complet</span>{% endif %}
+      </div>
+    </div>
+    {% if profile and profile.cv_file %}
+    <a href="{{ profile.cv_file.url }}" target="_blank" class="btn btn-primary btn-sm" download>
+      <i data-lucide="download" style="width:15px;height:15px"></i> Télécharger CV
+    </a>
+    {% endif %}
+  </div>
+
+  <!-- RÉSUMÉ -->
+  {% if profile and profile.summary %}
+  <div class="card card-p" style="margin-bottom:18px">
+    <div style="font-size:16px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:7px"><i data-lucide="user" style="width:16px;height:16px;color:var(--gold-dark)"></i> Résumé professionnel</div>
+    <p style="font-size:15px;color:var(--text-2);line-height:1.75">{{ profile.summary }}</p>
+  </div>
+  {% endif %}
+
+  <!-- COMPÉTENCES -->
+  {% if skills %}
+  <div class="card card-p" style="margin-bottom:18px">
+    <div style="font-size:16px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:7px"><i data-lucide="settings" style="width:16px;height:16px;color:var(--gold-dark)"></i> Compétences</div>
+    {% regroup skills by get_category_display as groups %}
+    {% for g in groups %}
+    <div style="margin-bottom:14px">
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;color:var(--text-3);margin-bottom:8px">{{ g.grouper }}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:7px">
+        {% for sk in g.list %}
+        <span style="padding:5px 12px;background:var(--gold-bg);border:1px solid var(--gold-border);border-radius:7px;font-size:13px;font-weight:600;color:var(--gold-dark)">{{ sk.name }}{% if sk.level %} · {{ sk.get_level_display }}{% endif %}</span>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- EXPÉRIENCES -->
+  {% if experiences %}
+  <div class="card card-p" style="margin-bottom:18px">
+    <div style="font-size:16px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:7px"><i data-lucide="briefcase" style="width:16px;height:16px;color:var(--gold-dark)"></i> Expériences professionnelles</div>
+    {% for exp in experiences %}
+    <div style="padding:16px 0;border-bottom:1px solid var(--border);{% if forloop.last %}border:none{% endif %}">
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:6px">
+        <div>
+          <div style="font-size:16px;font-weight:700">{{ exp.title }}</div>
+          <div style="font-size:14px;color:var(--text-2)">{{ exp.company }}{% if exp.location %} · {{ exp.location }}{% endif %}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:13px;color:var(--text-3)">{{ exp.start_date|date:"M Y" }} — {% if exp.is_current %}Présent{% else %}{{ exp.end_date|date:"M Y" }}{% endif %}</div>
+          <div style="font-size:13px;color:var(--gold-dark);font-weight:600">{{ exp.duration }}</div>
+          {% if exp.is_current %}<span class="badge badge-green" style="font-size:11px">En poste</span>{% endif %}
+        </div>
+      </div>
+      {% if exp.description %}<p style="font-size:14px;color:var(--text-2);line-height:1.7;margin-bottom:8px">{{ exp.description }}</p>{% endif %}
+      {% if exp.technologies %}
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        {% for tech in exp.technologies|split:"," %}
+        <span style="padding:3px 9px;background:var(--cream-2);border:1px solid var(--border-2);border-radius:6px;font-size:12px;font-weight:600;color:var(--text-2)">{{ tech }}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- FORMATIONS -->
+  {% if educations %}
+  <div class="card card-p" style="margin-bottom:18px">
+    <div style="font-size:16px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:7px"><i data-lucide="graduation-cap" style="width:16px;height:16px;color:var(--gold-dark)"></i> Formations</div>
+    {% for edu in educations %}
+    <div style="display:flex;gap:14px;padding:12px 0;border-bottom:1px solid var(--border);{% if forloop.last %}border:none{% endif %}">
+      <div style="width:44px;height:44px;border-radius:10px;background:var(--gold-bg);border:1px solid var(--gold-border);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i data-lucide="graduation-cap" style="width:18px;height:18px;color:var(--gold-dark)"></i></div>
+      <div>
+        <div style="font-size:15px;font-weight:700">{{ edu.degree }}</div>
+        <div style="font-size:14px;color:var(--text-2)">{{ edu.institution }}{% if edu.location %} · {{ edu.location }}{% endif %}</div>
+        <div style="font-size:13px;color:var(--text-3);margin-top:2px">{{ edu.start_year }} – {{ edu.end_year|default:"En cours" }}{% if edu.gpa %} · {{ edu.gpa }}{% endif %}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- CANDIDATURES DE CE CANDIDAT POUR MES OFFRES -->
+  {% if applications %}
+  <div class="card card-p" style="margin-bottom:18px">
+    <div style="font-size:16px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:7px"><i data-lucide="clipboard-list" style="width:16px;height:16px;color:var(--gold-dark)"></i> Candidatures pour vos offres</div>
+    {% for app in applications %}
+    <div style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:10px;border:1px solid var(--border);margin-bottom:8px">
+      <div style="flex:1">
+        <div style="font-size:15px;font-weight:700">{{ app.job.title }}</div>
+        <div style="font-size:13px;color:var(--text-3)">Postulé le {{ app.applied_at|date:"d M Y" }}</div>
+      </div>
+      <span style="padding:5px 12px;border-radius:50px;font-size:12px;font-weight:700;background:{{ app.status_bg }};color:{{ app.status_text_color }}">
+        <i data-lucide="{{ app.status_icon }}" style="width:12px;height:12px"></i> {{ app.get_status_display }}
+      </span>
+      <a href="{% url 'applications:job_apps' app.job.pk %}" class="btn btn-secondary btn-sm">Voir candidature</a>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>document.addEventListener('DOMContentLoaded',function(){if(window.lucide)lucide.createIcons();});</script>
+{% endblock %}

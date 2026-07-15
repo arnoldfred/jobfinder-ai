@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% block title %}{{ employer.get_full_name|default:employer.email }} — JobFinder AI{% endblock %}
+
+{% block content %}
+<div class="page-inner container-sm">
+  <!-- Header -->
+  <div class="card card-p" style="margin-bottom:22px;display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+    {% if profile and profile.company_logo %}
+    <img src="{{ profile.company_logo.url }}" style="width:72px;height:72px;border-radius:14px;object-fit:contain;border:1px solid var(--border);flex-shrink:0"/>
+    {% else %}
+    <div style="width:72px;height:72px;border-radius:14px;background:linear-gradient(135deg,var(--gold),var(--gold-dark));display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;font-family:'Playfair Display',serif;color:white;flex-shrink:0">
+      {{ profile.company_name|first|upper|default:"E" }}
+    </div>
+    {% endif %}
+    <div style="flex:1">
+      <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700">
+        {% if profile %}{{ profile.company_name }}{% else %}{{ employer.get_full_name }}{% endif %}
+      </div>
+      {% if profile and profile.location %}
+      <div style="font-size:15px;color:var(--text-2);margin-top:3px">
+        <i data-lucide="map-pin" style="width:14px;height:14px"></i> {{ profile.location }}
+      </div>
+      {% endif %}
+      {% if profile and profile.company_website %}
+      <a href="{{ profile.company_website }}" target="_blank" style="font-size:14px;color:var(--gold-dark);font-weight:600;text-decoration:none;margin-top:6px;display:inline-flex;align-items:center;gap:5px">
+        <i data-lucide="external-link" style="width:13px;height:13px"></i> {{ profile.company_website|truncatechars:40 }}
+      </a>
+      {% endif %}
+    </div>
+    {% if profile and profile.is_verified %}
+    <span class="badge badge-green"><i data-lucide="shield-check" style="width:13px;height:13px"></i> Employeur vérifié</span>
+    {% endif %}
+  </div>
+
+  {% if profile and profile.company_description %}
+  <div class="card card-p" style="margin-bottom:18px">
+    <div style="font-size:16px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:7px">
+      <i data-lucide="building-2" style="width:16px;height:16px;color:var(--gold-dark)"></i> À propos
+    </div>
+    <p style="font-size:15px;color:var(--text-2);line-height:1.75">{{ profile.company_description }}</p>
+    {% if profile.company_size or profile.industry %}
+    <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
+      {% if profile.company_size %}<span class="badge badge-gray"><i data-lucide="users" style="width:12px;height:12px"></i> {{ profile.company_size }}</span>{% endif %}
+      {% if profile.industry %}<span class="badge badge-gray"><i data-lucide="briefcase" style="width:12px;height:12px"></i> {{ profile.industry }}</span>{% endif %}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- Active jobs -->
+  {% if active_jobs %}
+  <div class="card card-p">
+    <div style="font-size:16px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:7px">
+      <i data-lucide="briefcase" style="width:16px;height:16px;color:var(--gold-dark)"></i> Offres actives ({{ active_jobs|length }})
+    </div>
+    {% for job in active_jobs %}
+    <a href="{% url 'jobs:detail' job.pk %}" style="display:flex;align-items:center;gap:12px;padding:14px;border-radius:10px;border:1px solid var(--border);margin-bottom:10px;text-decoration:none;transition:all 0.2s"
+      onmouseover="this.style.borderColor='var(--gold-border)';this.style.background='var(--gold-bg)'"
+      onmouseout="this.style.borderColor='var(--border)';this.style.background='transparent'">
+      <div style="width:40px;height:40px;border-radius:9px;background:var(--gold-bg);border:1px solid var(--gold-border);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <i data-lucide="{{ job.domain_icon }}" style="width:18px;height:18px;color:var(--gold-dark)"></i>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:15px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ job.title }}</div>
+        <div style="font-size:13px;color:var(--text-3);margin-top:2px">{{ job.location }} · {{ job.get_job_type_display }} · {{ job.days_ago }}</div>
+      </div>
+      {% if job.salary_min %}<span class="badge badge-gold" style="flex-shrink:0">{{ job.salary_text }}</span>{% endif %}
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>document.addEventListener('DOMContentLoaded',function(){if(window.lucide)lucide.createIcons();});</script>
+{% endblock %}

@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+{% block title %}Estimateur de Correspondance — JobFinder AI{% endblock %}
+{% block content %}
+<div class="page-inner">
+
+  <!-- Header -->
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;margin-bottom:28px">
+    <div>
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--gold-dark);margin-bottom:6px;display:flex;align-items:center;gap:6px">
+        <i data-lucide="target" style="width:13px;height:13px"></i> ESPACE RECRUTEUR
+      </div>
+      <h1 class="h1">Estimateur de correspondance</h1>
+      <p style="color:var(--text-3);font-size:14px;margin-top:4px">Score de matching IA candidat ↔ offre pour toutes vos offres actives</p>
+    </div>
+    <div style="display:flex;gap:8px">
+      <a href="{% url 'employers:dashboard' %}" class="btn btn-secondary btn-sm"><i data-lucide="arrow-left" style="width:14px;height:14px"></i> Dashboard</a>
+    </div>
+  </div>
+
+  {% if not data %}
+  <div class="card card-p" style="text-align:center;padding:48px">
+    <i data-lucide="inbox" style="width:40px;height:40px;color:var(--text-3);margin-bottom:16px"></i>
+    <p style="color:var(--text-2);font-size:15px">Aucune offre active avec des candidatures.</p>
+    <a href="{% url 'employers:post_job' %}" class="btn btn-primary" style="margin-top:16px">Publier une offre</a>
+  </div>
+  {% endif %}
+
+  {% for item in data %}
+  <div class="card" style="margin-bottom:24px;overflow:hidden">
+    <!-- En-tête offre -->
+    <div style="padding:18px 22px;border-bottom:1px solid var(--border);background:var(--surface-2);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+      <div>
+        <div style="font-size:16px;font-weight:700;color:var(--text-1)">{{ item.job.title }}</div>
+        <div style="font-size:13px;color:var(--text-3);margin-top:2px;display:flex;align-items:center;gap:10px">
+          <span><i data-lucide="map-pin" style="width:12px;height:12px;display:inline"></i> {{ item.job.location }}</span>
+          <span><i data-lucide="briefcase" style="width:12px;height:12px;display:inline"></i> {{ item.job.get_job_type_display }}</span>
+          <span><i data-lucide="users" style="width:12px;height:12px;display:inline"></i> {{ item.total }} candidat{{ item.total|pluralize }}</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        {% if item.best_score >= 80 %}
+          <div style="padding:4px 12px;border-radius:20px;background:var(--green-bg);border:1px solid var(--green-border);color:var(--green);font-size:12px;font-weight:700">
+            Meilleur match : {{ item.best_score }}%
+          </div>
+        {% elif item.best_score >= 60 %}
+          <div style="padding:4px 12px;border-radius:20px;background:var(--gold-bg);border:1px solid var(--gold-border);color:var(--gold-dark);font-size:12px;font-weight:700">
+            Meilleur match : {{ item.best_score }}%
+          </div>
+        {% else %}
+          <div style="padding:4px 12px;border-radius:20px;background:rgba(0,0,0,.04);border:1px solid var(--border);color:var(--text-3);font-size:12px;font-weight:600">
+            Meilleur match : {{ item.best_score }}%
+          </div>
+        {% endif %}
+        <a href="{% url 'applications:job_apps' job_pk=item.job.pk %}" class="btn btn-secondary btn-sm">
+          <i data-lucide="list" style="width:13px;height:13px"></i> Toutes candidatures
+        </a>
+      </div>
+    </div>
+
+    {% if item.candidates %}
+    <!-- Tableau candidats -->
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border)">
+            <th style="text-align:left;padding:10px 20px;color:var(--text-3);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.5px">Candidat</th>
+            <th style="text-align:center;padding:10px 16px;color:var(--text-3);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.5px">Score IA</th>
+            <th style="text-align:left;padding:10px 16px;color:var(--text-3);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.5px">Compétences matchées</th>
+            <th style="text-align:center;padding:10px 16px;color:var(--text-3);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.5px">Statut</th>
+            <th style="text-align:center;padding:10px 16px;color:var(--text-3);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.5px">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in item.candidates %}
+          <tr style="border-bottom:1px solid var(--border-light);{% if forloop.first %}background:rgba(184,150,12,.03){% endif %}">
+            <!-- Candidat -->
+            <td style="padding:12px 20px">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="width:34px;height:34px;border-radius:50%;background:var(--gold-bg);border:1px solid var(--gold-border);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--gold-dark);flex-shrink:0">
+                  {{ c.candidate.first_name|first|default:c.candidate.email|first|upper }}
+                </div>
+                <div>
+                  <div style="font-weight:600;color:var(--text-1)">{{ c.candidate.get_full_name|default:c.candidate.email }}</div>
+                  <div style="font-size:11px;color:var(--text-3);margin-top:1px">
+                    {% if c.exp_count %}{{ c.exp_count }} exp.{% else %}Débutant{% endif %}
+                    {% if c.has_cv %} · <span style="color:var(--green)"><i data-lucide="file-check" style="width:10px;height:10px;display:inline"></i> CV</span>{% endif %}
+                  </div>
+                </div>
+              </div>
+            </td>
+            <!-- Score anneau -->
+            <td style="padding:12px 16px;text-align:center">
+              <div style="display:inline-flex;flex-direction:column;align-items:center;gap:3px">
+                <div style="width:44px;height:44px;border-radius:50%;border:3px solid {{ c.score_color }};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:{{ c.score_color }}">
+                  {{ c.score }}%
+                </div>
+                <span style="font-size:10px;color:{{ c.score_color }};font-weight:600">{{ c.score_label }}</span>
+              </div>
+            </td>
+            <!-- Compétences matchées -->
+            <td style="padding:12px 16px;max-width:200px">
+              <div style="display:flex;flex-wrap:wrap;gap:4px">
+                {% for skill in c.matched %}
+                <span style="padding:2px 8px;border-radius:12px;background:var(--green-bg);border:1px solid var(--green-border);color:var(--green);font-size:11px;font-weight:600">✓ {{ skill }}</span>
+                {% empty %}
+                <span style="color:var(--text-3);font-size:12px;font-style:italic">Aucune correspondance</span>
+                {% endfor %}
+                {% if c.missing %}
+                {% for skill in c.missing|slice:":2" %}
+                <span style="padding:2px 8px;border-radius:12px;background:rgba(184,50,48,.06);border:1px solid rgba(184,50,48,.15);color:var(--red);font-size:11px">✗ {{ skill }}</span>
+                {% endfor %}
+                {% endif %}
+              </div>
+            </td>
+            <!-- Statut candidature -->
+            <td style="padding:12px 16px;text-align:center">
+              <span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;
+                background:{{ c.app.status_bg }};color:{{ c.app.status_text_color }}">
+                {{ c.app.get_status_display }}
+              </span>
+            </td>
+            <!-- Actions -->
+            <td style="padding:12px 16px;text-align:center">
+              <div style="display:flex;gap:6px;justify-content:center">
+                <a href="{% url 'employers:match_detail' job_pk=item.job.pk candidate_pk=c.candidate.pk %}"
+                   class="btn btn-secondary btn-sm" title="Voir le détail du matching">
+                  <i data-lucide="bar-chart-2" style="width:13px;height:13px"></i>
+                </a>
+                <a href="{% url 'employers:candidate_profile' user_pk=c.candidate.pk %}"
+                   class="btn btn-secondary btn-sm" title="Voir le profil">
+                  <i data-lucide="user" style="width:13px;height:13px"></i>
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div style="padding:24px;text-align:center;color:var(--text-3);font-size:14px">
+      <i data-lucide="inbox" style="width:24px;height:24px;margin-bottom:8px;opacity:.4"></i><br>
+      Aucune candidature pour cette offre.
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

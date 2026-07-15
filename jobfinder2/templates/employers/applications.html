@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}Candidatures — {{ job.title }} — JobFinder AI{% endblock %}
+{% block ne %}active{% endblock %}
+{% block content %}
+<div class="page-inner">
+  <a href="{% url 'employers:dashboard' %}" style="font-size:15px;font-weight:600;color:var(--text-2);text-decoration:none;display:inline-block;margin-bottom:20px"><i data-lucide="arrow-left" style="width:16px;height:16px"></i> Retour</a>
+  <div style="margin-bottom:24px">
+    <h1 class="h1">Candidatures — {{ job.title }}</h1>
+    <p class="body" style="color:var(--text-2);margin-top:6px"><strong>{{ apps.count }}</strong> candidature{{ apps.count|pluralize }} reçue{{ apps.count|pluralize }}</p>
+  </div>
+  <div style="display:grid;gap:14px">
+    {% for app in apps %}
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);padding:22px 24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+      <div style="width:48px;height:48px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:white;flex-shrink:0">{{ app.user.first_name|first|upper|default:"?" }}</div>
+      <div style="flex:1;min-width:160px">
+        <div style="font-size:17px;font-weight:700">{{ app.user.get_full_name|default:app.user.email }}</div>
+        <div style="font-size:14px;color:var(--text-3);margin-top:2px">{{ app.user.email }}</div>
+        {% with p=app.user.profile %}{% if p.desired_title %}<div style="font-size:14px;color:var(--text-2);margin-top:3px">{{ p.desired_title }}</div>{% endif %}{% endwith %}
+      </div>
+      <div style="font-size:14px;color:var(--text-3)">{{ app.applied_at|date:"d M Y" }}</div>
+      <span class="badge badge-{{ app.status_color }}">{{ app.status_icon }} {{ app.get_status_display }}</span>
+      {% with p=app.user.profile %}{% if p.cv_file %}<a href="{{ p.cv_file.url }}" target="_blank" class="btn btn-secondary btn-sm"><i data-lucide="file-text" style="width:18px;height:18px;"></i> CV</a>{% endif %}{% endwith %}
+    </div>
+    {% empty %}
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);padding:72px;text-align:center;color:var(--text-3)">
+      <div style="font-size:40px;margin-bottom:14px"><i data-lucide="inbox" style="width:18px;height:18px;"></i></div>
+      <p style="font-size:17px">Aucune candidature pour le moment.</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

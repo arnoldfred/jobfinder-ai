@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% block title %}{% if edit %}Modifier{% else %}Publier{% endif %} une offre — JobFinder AI{% endblock %}
+{% block ne %}active{% endblock %}
+
+{% block content %}
+<div class="page-inner container-sm">
+  <div style="margin-bottom:28px">
+    <a href="{% url 'employers:dashboard' %}" style="font-size:15px;font-weight:600;color:var(--text-2);text-decoration:none"><i data-lucide="arrow-left" style="width:16px;height:16px"></i> Mon espace recruteur</a>
+    <h1 class="h1" style="margin-top:14px">{% if edit %}Modifier l'offre{% else %}Publier une offre d'emploi{% endif %}</h1>
+    <p class="body" style="color:var(--text-2);margin-top:6px">{% if not edit %}Votre offre sera visible immédiatement après publication.{% else %}Modifiez les informations ci-dessous.{% endif %}</p>
+  </div>
+
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+    <div style="background:var(--red-bg);border:1px solid rgba(192,57,43,0.2);border-radius:10px;padding:14px 18px;margin-bottom:20px;font-size:15px;color:var(--red)">{{ form.non_field_errors.0 }}</div>
+    {% endif %}
+
+    <!-- SECTION 1: Essentiel -->
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);padding:28px;margin-bottom:20px">
+      <div style="font-size:17px;font-weight:700;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--border)">1. Informations essentielles</div>
+      <div style="display:grid;gap:18px">
+        <div class="form-group" style="margin:0">
+          <label class="form-label">{{ form.title.label }}</label>{{ form.title }}
+          {% if form.title.errors %}<div class="form-error">{{ form.title.errors.0 }}</div>{% endif %}
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div class="form-group" style="margin:0"><label class="form-label">{{ form.location.label }}</label>{{ form.location }}</div>
+          <div class="form-group" style="margin:0"><label class="form-label">Pays</label>{{ form.country }}</div>
+          <div class="form-group" style="margin:0"><label class="form-label">{{ form.job_type.label }}</label>{{ form.job_type }}</div>
+          <div class="form-group" style="margin:0"><label class="form-label">{{ form.domain.label }}</label>{{ form.domain }}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          {{ form.is_remote }}
+          <label style="font-size:15px;font-weight:600;cursor:pointer">Poste en télétravail / Remote</label>
+        </div>
+        <div class="form-group" style="margin:0"><label class="form-label">{{ form.deadline.label }}</label>{{ form.deadline }}
+          <div class="form-hint">Laissez vide si pas de date limite</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 2: Description -->
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);padding:28px;margin-bottom:20px">
+      <div style="font-size:17px;font-weight:700;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--border)">2. Description du poste</div>
+      <div style="display:grid;gap:18px">
+        <div class="form-group" style="margin:0">
+          <label class="form-label">{{ form.description.label }}</label>{{ form.description }}
+          {% if form.description.errors %}<div class="form-error">{{ form.description.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="form-group" style="margin:0"><label class="form-label">{{ form.missions.label }}</label>{{ form.missions }}<div class="form-hint">Une mission par ligne, commencez par « - »</div></div>
+        <div class="form-group" style="margin:0"><label class="form-label">{{ form.requirements.label }}</label>{{ form.requirements }}</div>
+        <div class="form-group" style="margin:0"><label class="form-label">{{ form.required_skills.label }}</label>{{ form.required_skills }}<div class="form-hint">ex: Python, SQL, Excel — séparées par des virgules</div></div>
+        <div class="form-group" style="margin:0"><label class="form-label">{{ form.nice_to_have.label }}</label>{{ form.nice_to_have }}</div>
+        <div class="form-group" style="margin:0"><label class="form-label">{{ form.company_about.label }}</label>{{ form.company_about }}</div>
+      </div>
+    </div>
+
+    <!-- SECTION 3: Salaire -->
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);padding:28px;margin-bottom:28px">
+      <div style="font-size:17px;font-weight:700;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--border)">3. Rémunération <span style="font-weight:400;font-size:15px;color:var(--text-3)">(optionnel mais recommandé)</span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:14px">
+        <div class="form-group" style="margin:0"><label class="form-label">Salaire minimum</label>{{ form.salary_min }}</div>
+        <div class="form-group" style="margin:0"><label class="form-label">Salaire maximum</label>{{ form.salary_max }}</div>
+        <div class="form-group" style="margin:0"><label class="form-label">Devise</label>{{ form.salary_currency }}</div>
+      </div>
+      <div class="form-group" style="margin:0"><label class="form-label">{{ form.salary_display_text.label }}</label>{{ form.salary_display_text }}<div class="form-hint">Texte libre affiché aux candidats (remplace les montants si renseigné)</div></div>
+    </div>
+
+    <div style="display:flex;gap:14px">
+      <button type="submit" class="btn btn-primary btn-lg">{% if edit %}Enregistrer les modifications{% else %}Publier l'offre{% endif %}</button>
+      <a href="{% url 'employers:dashboard' %}" class="btn btn-secondary btn-lg">Annuler</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block title %}Mes Candidatures — JobFinder AI{% block extra_js %}
+<script>document.addEventListener("DOMContentLoaded",function(){if(window.lucide)lucide.createIcons();});</script>
+{% endblock %}
+{% endblock %}
+{% block na %}active{% endblock %}
+{% block content %}
+<div class="page-inner">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;margin-bottom:28px">
+    <div><h1 class="h1">Mes Candidatures</h1><p class="body" style="color:var(--text-2);margin-top:6px">Suivi de toutes vos candidatures</p></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <span class="badge badge-blue" style="font-size:14px;padding:8px 16px">{{ stats.total }} total</span>
+      <span class="badge badge-green" style="font-size:14px;padding:8px 16px">{{ stats.accepted }} acceptées</span>
+      <span class="badge badge-orange" style="font-size:14px;padding:8px 16px">{{ stats.pending }} en attente</span>
+    </div>
+  </div>
+  <div class="tabs-nav" style="margin-bottom:20px;max-width:560px">
+    <a href="?" class="tabs-btn {% if not status_filter %}active{% endif %}">Toutes ({{ stats.total }})</a>
+    <a href="?status=sent" class="tabs-btn {% if status_filter == 'sent' %}active{% endif %}">Envoyées</a>
+    <a href="?status=pending" class="tabs-btn {% if status_filter == 'pending' %}active{% endif %}">En attente</a>
+    <a href="?status=interview" class="tabs-btn {% if status_filter == 'interview' %}active{% endif %}">Entretiens</a>
+    <a href="?status=accepted" class="tabs-btn {% if status_filter == 'accepted' %}active{% endif %}">Acceptées</a>
+  </div>
+  <div style="display:grid;gap:12px">
+    {% for app in applications %}
+    {% if app.job %}
+    <a href="{% url 'applications:detail' app.pk %}" style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;text-decoration:none;transition:all 0.2s" onmouseover="this.style.boxShadow='var(--shadow-md)'" onmouseout="this.style.boxShadow='none'">
+      <div style="width:46px;height:46px;border-radius:11px;background:var(--gold-bg);border:1px solid var(--gold-border);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i data-lucide="{% if app.job.domain_icon %}{{ app.job.domain_icon }}{% else %}briefcase{% endif %}" style="width:20px;height:20px;color:var(--gold-dark)"></i></div>
+      <div style="flex:1;min-width:140px">
+        <div style="font-size:16px;font-weight:700;color:var(--text)">{{ app.job.title }}</div>
+        <div style="font-size:14px;color:var(--text-3)">{{ app.job.company }} · {{ app.job.location }}</div>
+      </div>
+      <div style="font-size:14px;color:var(--text-3)">{{ app.applied_at|date:"d M Y" }}</div>
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+          <span style="padding:5px 12px;border-radius:50px;font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:6px;background:{{ app.status_bg }};color:{{ app.status_text_color }};border:1px solid {{ app.status_text_color }}33">
+            <i data-lucide="{{ app.status_icon }}" style="width:13px;height:13px"></i>{{ app.get_status_display }}
+          </span>
+          <!-- Mini timeline de progression -->
+          <div style="display:flex;gap:3px;align-items:center">
+            {% for step_val, step_label in app.STATUS %}
+              {% if step_val != 'withdrawn' and step_val != 'rejected' %}
+                <div style="width:6px;height:6px;border-radius:50%;{% if app.status == step_val %}background:var(--gold);box-shadow:0 0 0 3px var(--gold-bg){% elif app.status in 'sent,viewed,pending,interview,offer,accepted' and step_val in app.status or app.status == 'accepted' %}background:var(--green){% else %}background:var(--border){% endif %}" title="{{ step_label }}"></div>
+              {% endif %}
+            {% endfor %}
+          </div>
+          {% if app.status == 'rejected' or app.status == 'withdrawn' %}
+          <a href="{% url 'jobs:detail' app.job.pk %}" class="btn btn-secondary btn-sm" style="font-size:12px;padding:5px 10px" title="Candidater à nouveau">
+            <i data-lucide="refresh-cw" style="width:12px;height:12px"></i> Re-postuler
+          </a>
+          {% endif %}
+        </div>
+    </a>
+    {% else %}
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 22px;display:flex;align-items:center;gap:14px;opacity:0.6">
+      <div style="width:46px;height:46px;border-radius:11px;background:var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i data-lucide="briefcase" style="width:20px;height:20px;color:var(--text-3)"></i></div>
+      <div style="flex:1">
+        <div style="font-size:16px;font-weight:700;color:var(--text-3)">Offre supprimée</div>
+        <div style="font-size:14px;color:var(--text-3)">Cette offre n'est plus disponible</div>
+      </div>
+      <span style="padding:5px 12px;border-radius:50px;font-size:13px;font-weight:700;background:var(--border);color:var(--text-3)">{{ app.get_status_display }}</span>
+    </div>
+    {% endif %}
+    {% empty %}
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);padding:72px;text-align:center;color:var(--text-3)">
+      <div style="font-size:48px;margin-bottom:16px"><i data-lucide="clipboard-list" style="width:18px;height:18px;"></i></div>
+      <div style="font-size:18px;font-weight:700;margin-bottom:10px">Aucune candidature</div>
+      <a href="{% url 'jobs:list' %}" class="btn btn-primary" style="margin-top:6px">Trouver des offres</a>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

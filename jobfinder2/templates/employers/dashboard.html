@@ -1,0 +1,198 @@
+{% extends 'base.html' %}
+{% block title %}Espace Recruteur — JobFinder AI{% endblock %}
+{% block ne %}active{% endblock %}
+
+{% block content %}
+<div class="page-inner">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;margin-bottom:32px">
+    <div>
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--gold-dark);margin-bottom:8px;display:flex;align-items:center;gap:6px">
+        <i data-lucide="building-2" style="width:14px;height:14px"></i> Espace Recruteur
+      </div>
+      <h1 class="h1">{{ ep.company_name }}</h1>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <a href="{% url 'employers:tracking' %}" class="btn btn-secondary btn-sm"><i data-lucide="bar-chart-3" style="width:15px;height:15px"></i> Suivi</a>
+      <a href="{% url 'employers:setup' %}" class="btn btn-secondary btn-sm"><i data-lucide="settings" style="width:15px;height:15px"></i> Profil entreprise</a>
+      <a href="{% url 'employers:post_job' %}" class="btn btn-primary btn-sm"><i data-lucide="plus" style="width:15px;height:15px"></i> Nouvelle offre</a>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="grid-4" style="margin-bottom:28px">
+    <div class="card card-p" style="text-align:center">
+      <div style="width:44px;height:44px;border-radius:12px;background:var(--gold-bg);border:1px solid var(--gold-border);display:flex;align-items:center;justify-content:center;margin:0 auto 12px">
+        <i data-lucide="briefcase" style="width:20px;height:20px;color:var(--gold-dark)"></i>
+      </div>
+      <div class="stat-number">{{ stats.total_jobs }}</div>
+      <div class="stat-label">Offres publiées</div>
+      <div style="font-size:13px;color:var(--green);margin-top:4px;font-weight:600">{{ stats.active_jobs }} actives</div>
+    </div>
+    <div class="card card-p" style="text-align:center">
+      <div style="width:44px;height:44px;border-radius:12px;background:var(--blue-bg);border:1px solid rgba(26,78,122,.2);display:flex;align-items:center;justify-content:center;margin:0 auto 12px">
+        <i data-lucide="inbox" style="width:20px;height:20px;color:var(--blue)"></i>
+      </div>
+      <div class="stat-number">{{ stats.total_apps }}</div>
+      <div class="stat-label">Candidatures reçues</div>
+    </div>
+    <div class="card card-p" style="text-align:center">
+      <div style="width:44px;height:44px;border-radius:12px;background:var(--green-bg);border:1px solid var(--green-border);display:flex;align-items:center;justify-content:center;margin:0 auto 12px">
+        <i data-lucide="eye" style="width:20px;height:20px;color:var(--green)"></i>
+      </div>
+      <div class="stat-number">{{ stats.total_views }}</div>
+      <div class="stat-label">Vues totales</div>
+    </div>
+    <div class="card card-p" style="text-align:center">
+      <div style="width:44px;height:44px;border-radius:12px;background:var(--gold-bg);border:1px solid var(--gold-border);display:flex;align-items:center;justify-content:center;margin:0 auto 12px">
+        <i data-lucide="target" style="width:20px;height:20px;color:var(--gold-dark)"></i>
+      </div>
+      <div class="stat-number" style="color:var(--gold-dark)">
+        {% if global_avg_match %}{{ global_avg_match }}%{% else %}—{% endif %}
+      </div>
+      <div class="stat-label">Score matching moyen</div>
+    </div>
+  </div>
+
+  <!-- Mes offres avec estimateurs de matching -->
+  <div class="card" style="overflow:hidden;margin-bottom:24px">
+    <div style="padding:22px 28px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+      <div style="font-size:17px;font-weight:700;display:flex;align-items:center;gap:8px">
+        <i data-lucide="list" style="width:18px;height:18px;color:var(--gold-dark)"></i> Mes offres
+      </div>
+      <a href="{% url 'employers:post_job' %}" class="btn btn-primary btn-sm">+ Nouvelle offre</a>
+    </div>
+
+    {% if jobs_with_match %}
+    {% for jm in jobs_with_match %}
+    <div style="border-bottom:1px solid var(--border);padding:20px 28px" id="job-block-{{ jm.job.pk }}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap">
+
+        <!-- Infos offre -->
+        <div style="flex:1;min-width:250px">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">
+            <span style="font-size:16px;font-weight:700">{{ jm.job.title }}</span>
+            <span class="badge {% if jm.job.is_active %}badge-green{% else %}badge-gray{% endif %}" id="badge-{{ jm.job.pk }}">
+              {% if jm.job.is_active %}Active{% else %}Inactive{% endif %}
+            </span>
+            <span class="badge badge-gray">{{ jm.job.get_job_type_display }}</span>
+          </div>
+          <div style="font-size:13px;color:var(--text-3);display:flex;gap:14px;flex-wrap:wrap">
+            <span><i data-lucide="map-pin" style="width:13px;height:13px"></i> {{ jm.job.location }}</span>
+            <span><i data-lucide="eye" style="width:13px;height:13px"></i> {{ jm.job.view_count }} vues</span>
+            <span><i data-lucide="users" style="width:13px;height:13px"></i> {{ jm.app_count }} candidature{{ jm.app_count|pluralize }}</span>
+            {% if jm.avg_match > 0 %}
+            <span style="color:{% if jm.avg_match >= 65 %}var(--green){% elif jm.avg_match >= 45 %}var(--gold-dark){% else %}var(--red){% endif %};font-weight:600">
+              <i data-lucide="target" style="width:13px;height:13px"></i> Match moyen : {{ jm.avg_match }}%
+            </span>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <a href="{% url 'jobs:detail' jm.job.pk %}" class="btn btn-ghost btn-sm">Voir</a>
+          <a href="{% url 'applications:job_apps' jm.job.pk %}" class="btn btn-secondary btn-sm">
+            <i data-lucide="inbox" style="width:14px;height:14px"></i> Candidats ({{ jm.app_count }})
+          </a>
+          <a href="{% url 'employers:edit_job' jm.job.pk %}" class="btn btn-secondary btn-sm">
+            <i data-lucide="pencil" style="width:14px;height:14px"></i>
+          </a>
+          <button onclick="toggleJob({{ jm.job.pk }},this)" id="toggle-{{ jm.job.pk }}"
+            class="btn btn-sm {% if jm.job.is_active %}btn-danger{% else %}btn-primary{% endif %}">
+            {% if jm.job.is_active %}Désactiver{% else %}Activer{% endif %}
+          </button>
+        </div>
+      </div>
+
+      <!-- Top candidats avec scores de matching -->
+      {% if jm.top_candidates %}
+      <div style="margin-top:16px">
+        <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text-3);margin-bottom:10px;display:flex;align-items:center;gap:6px">
+          <i data-lucide="target" style="width:12px;height:12px;color:var(--gold-dark)"></i> Top candidats — Estimateur de correspondance
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          {% for c in jm.top_candidates %}
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:10px;background:var(--cream-2);border:1px solid var(--border);flex-wrap:wrap">
+            <!-- Avatar -->
+            <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-dark));display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              {% if c.app.user.profile.avatar %}
+                <img src="{{ c.app.user.profile.avatar.url }}" style="width:36px;height:36px;border-radius:50%;object-fit:cover">
+              {% else %}
+                <span style="font-size:14px;font-weight:700;color:white">{{ c.app.user.first_name|first|upper|default:"?" }}</span>
+              {% endif %}
+            </div>
+            <!-- Nom + statut -->
+            <div style="flex:1;min-width:120px">
+              <div style="font-size:14px;font-weight:600">{{ c.app.user.get_full_name|default:c.app.user.email }}</div>
+              <div style="font-size:12px;color:var(--text-3)">{{ c.app.get_status_display }} · {{ c.app.applied_at|date:"d/m/Y" }}</div>
+            </div>
+            <!-- Score matching -->
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="width:80px;height:6px;border-radius:3px;background:var(--border);overflow:hidden">
+                <div style="height:100%;width:{{ c.match_score }}%;background:{% if c.match_score >= 65 %}var(--green){% elif c.match_score >= 45 %}var(--gold){% else %}var(--red){% endif %};border-radius:3px;transition:width .3s"></div>
+              </div>
+              <span style="font-size:13px;font-weight:700;color:{% if c.match_score >= 65 %}var(--green){% elif c.match_score >= 45 %}var(--gold-dark){% else %}var(--red){% endif %};min-width:38px">
+                {{ c.match_score }}%
+              </span>
+              <span style="font-size:11px;color:var(--text-3)">{{ c.match_label }}</span>
+            </div>
+            <!-- Compétences matchées -->
+            {% if c.matched_skills %}
+            <div style="display:flex;gap:5px;flex-wrap:wrap">
+              {% for skill in c.matched_skills %}
+              <span style="padding:2px 8px;border-radius:50px;background:var(--green-bg);border:1px solid var(--green-border);font-size:11px;font-weight:600;color:var(--green)">{{ skill }}</span>
+              {% endfor %}
+            </div>
+            {% endif %}
+            <!-- Lien profil -->
+            <a href="{% url 'employers:candidate_profile' c.app.user.pk %}" class="btn btn-ghost btn-sm" style="flex-shrink:0">
+              <i data-lucide="user" style="width:13px;height:13px"></i> Profil
+            </a>
+          </div>
+          {% endfor %}
+        </div>
+        {% if jm.app_count > 5 %}
+        <div style="margin-top:8px;text-align:center">
+          <a href="{% url 'applications:job_apps' jm.job.pk %}" style="font-size:13px;color:var(--gold-dark);font-weight:600">
+            Voir tous les {{ jm.app_count }} candidats →
+          </a>
+        </div>
+        {% endif %}
+      </div>
+      {% elif jm.app_count == 0 %}
+      <div style="margin-top:12px;padding:12px;border-radius:8px;background:var(--cream-2);font-size:13px;color:var(--text-3);text-align:center">
+        Aucune candidature reçue pour cette offre.
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+
+    {% else %}
+    <div style="padding:72px;text-align:center;color:var(--text-3)">
+      <i data-lucide="briefcase" style="width:48px;height:48px;margin-bottom:16px;opacity:.3"></i>
+      <div style="font-size:18px;font-weight:700;margin-bottom:10px">Aucune offre publiée</div>
+      <p style="font-size:15px;margin-bottom:22px">Publiez votre première offre et trouvez les meilleurs talents.</p>
+      <a href="{% url 'employers:post_job' %}" class="btn btn-primary">+ Publier une offre</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const CSRF = '{{ csrf_token }}';
+async function toggleJob(pk, btn) {
+  const r = await fetch(`/employers/${pk}/toggle/`, {method:'POST', headers:{'X-CSRFToken':CSRF}});
+  const d = await r.json();
+  btn.textContent = d.active ? 'Désactiver' : 'Activer';
+  btn.className   = 'btn btn-sm ' + (d.active ? 'btn-danger' : 'btn-primary');
+  const badge = document.getElementById('badge-' + pk);
+  if (badge) {
+    badge.textContent = d.active ? 'Active' : 'Inactive';
+    badge.className   = 'badge ' + (d.active ? 'badge-green' : 'badge-gray');
+  }
+}
+if (window.lucide) lucide.createIcons();
+</script>
+{% endblock %}

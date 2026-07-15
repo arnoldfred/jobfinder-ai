@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% block title %}Notifications — JobFinder AI{% endblock %}
+
+{% block content %}
+<div class="page-inner container-sm">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px">
+    <div>
+      <h1 class="h1">Notifications</h1>
+      {% if unread %}<p class="body" style="color:var(--text-3);margin-top:4px"><strong style="color:var(--gold-dark)">{{ unread }}</strong> non lue{{ unread|pluralize }}</p>{% endif %}
+    </div>
+    {% if unread %}
+    <button onclick="markAllRead()" class="btn btn-secondary btn-sm">
+      <i data-lucide="check-check" style="width:15px;height:15px"></i> Tout marquer lu
+    </button>
+    {% endif %}
+  </div>
+
+  <div style="display:grid;gap:10px">
+    {% for n in notifications %}
+    <div id="notif-{{ n.pk }}" class="card" style="padding:18px 22px;display:flex;gap:14px;align-items:flex-start;transition:all 0.2s;{% if not n.is_read %}border-color:var(--gold-border);background:rgba(255,252,235,0.9){% endif %}">
+      <!-- Icône type -->
+      <div style="width:40px;height:40px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+        {% if n.notif_type == 'app_status' %}background:var(--gold-bg);color:var(--gold-dark)
+        {% elif n.notif_type == 'new_app' %}background:var(--blue-bg);color:var(--blue)
+        {% elif n.notif_type == 'interview' %}background:var(--green-bg);color:var(--green)
+        {% elif n.notif_type == 'message' %}background:var(--orange-bg);color:var(--orange)
+        {% else %}background:var(--cream-2);color:var(--text-3){% endif %}">
+        <i data-lucide="{% if n.notif_type == 'app_status' %}file-check{% elif n.notif_type == 'new_app' %}user-plus{% elif n.notif_type == 'interview' %}calendar{% elif n.notif_type == 'message' %}message-circle{% else %}bell{% endif %}" style="width:18px;height:18px"></i>
+      </div>
+
+      <!-- Contenu -->
+      <div style="flex:1;min-width:0">
+        <div style="font-size:15px;font-weight:{% if not n.is_read %}700{% else %}500{% endif %};color:var(--text)">{{ n.title }}</div>
+        <div style="font-size:14px;color:var(--text-2);margin-top:3px;line-height:1.6">{{ n.message }}</div>
+        <div style="font-size:12px;color:var(--text-3);margin-top:6px">{{ n.created_at|date:"d M Y à H:i" }}</div>
+      </div>
+
+      <!-- Actions -->
+      <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end;flex-shrink:0">
+        {% if not n.is_read %}
+        <span style="width:10px;height:10px;border-radius:50%;background:var(--gold);display:block"></span>
+        {% endif %}
+        {% if n.link %}
+        <a href="{{ n.link }}" class="btn btn-primary btn-sm" style="font-size:12px;padding:6px 12px">Voir</a>
+        {% endif %}
+      </div>
+    </div>
+    {% empty %}
+    <div class="card card-p" style="text-align:center;padding:72px">
+      <i data-lucide="bell-off" style="width:48px;height:48px;color:var(--border-2);margin:0 auto 16px;display:block"></i>
+      <div class="h3" style="margin-bottom:10px">Aucune notification</div>
+      <p class="body" style="color:var(--text-3)">Vos notifications apparaîtront ici.</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const AI_CSRF = '{{ csrf_token }}';
+async function markAllRead() {
+  await fetch('/applications/notifications/read/', {method:'POST',headers:{'X-CSRFToken':AI_CSRF}});
+  document.querySelectorAll('[id^="notif-"]').forEach(function(el) {
+    el.style.borderColor = '';
+    el.style.background  = '';
+    var dot = el.querySelector('[style*="border-radius:50%"]');
+    if (dot) dot.remove();
+  });
+  var btn = event.target.closest('button');
+  btn.style.display = 'none';
+}
+document.addEventListener('DOMContentLoaded', function() {
+  if (window.lucide) lucide.createIcons();
+});
+</script>
+{% endblock %}

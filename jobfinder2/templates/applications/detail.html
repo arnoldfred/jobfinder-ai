@@ -1,0 +1,266 @@
+{% extends 'base.html' %}
+{% block title %}Candidature — {% if app.job %}{{ app.job.title }}{% else %}Offre supprimée{% endif %}{% endblock %}
+{% block na %}active{% endblock %}
+
+{% block content %}
+<div class="page-inner container-sm">
+  <a href="{% url 'applications:history' %}" style="display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:600;color:var(--text-3);text-decoration:none;margin-bottom:20px">
+    <i data-lucide="arrow-left" style="width:15px;height:15px"></i> Mes candidatures
+  </a>
+
+  <!-- En-tête -->
+  <div class="card card-p" style="margin-bottom:20px">
+    {% if app.job %}
+    <div style="display:flex;gap:16px;align-items:flex-start">
+      <div style="width:56px;height:56px;border-radius:14px;background:var(--gold-bg);border:1px solid var(--gold-border);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0">
+        <i data-lucide="{{ app.job.domain_icon|default:'briefcase' }}" style="width:26px;height:26px;color:var(--gold-dark)"></i>
+      </div>
+      <div style="flex:1">
+        <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700">{{ app.job.title }}</div>
+        <div style="font-size:16px;color:var(--text-2);margin-top:3px">{{ app.job.company }} · {{ app.job.location }}</div>
+        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <span style="padding:6px 16px;border-radius:50px;font-size:14px;font-weight:700;background:{{ app.status_bg }};color:{{ app.status_text_color }};border:1px solid {{ app.status_text_color }}33">
+            <i data-lucide="{{ app.status_icon }}" style="width:14px;height:14px"></i>
+            {{ app.get_status_display }}
+          </span>
+          <span style="font-size:13px;color:var(--text-3)">Postulé le {{ app.applied_at|date:"d M Y" }}</span>
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <div style="padding:20px;text-align:center;background:var(--bg-2);border-radius:10px;border:1px solid var(--border)">
+      <i data-lucide="alert-circle" style="width:32px;height:32px;color:var(--text-3);margin-bottom:10px"></i>
+      <p style="font-size:14px;color:var(--text-2);margin:0">
+        <strong>Cette offre a été supprimée.</strong> Vous ne pouvez plus voir les détails de l'offre, mais votre candidature reste dans votre historique.
+      </p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Timeline statut -->
+  <div class="card card-p" style="margin-bottom:20px">
+    <div style="font-size:16px;font-weight:700;margin-bottom:18px">Progression de votre candidature</div>
+    <div style="display:flex;align-items:center;gap:0;overflow-x:auto;padding-bottom:8px">
+      {% with statuses='sent,viewed,pending,interview,offer,accepted' %}
+      {% for s in statuses.split %}
+      {% endfor %}
+      {% endwith %}
+      {% for step_val, step_label in app.STATUS %}
+      {% if step_val != 'withdrawn' and step_val != 'rejected' %}
+      <div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:70px">
+        <div style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;border:2px solid;
+          {% if app.status == step_val %}background:var(--gold);border-color:var(--gold);color:white
+          {% elif app.status == 'rejected' or app.status == 'withdrawn' %}background:var(--bg-2);border-color:var(--border);color:var(--text-3)
+          {% elif forloop.counter <= app.STATUS|length %}background:var(--green-bg);border-color:var(--green);color:var(--green)
+          {% else %}background:var(--bg-2);border-color:var(--border);color:var(--text-3){% endif %}">
+          <i data-lucide="check" style="width:14px;height:14px"></i>
+        </div>
+        <div style="font-size:11px;font-weight:600;margin-top:6px;text-align:center;color:{% if app.status == step_val %}var(--gold-dark){% else %}var(--text-3){% endif %}">{{ step_label }}</div>
+      </div>
+      {% if not forloop.last %}
+      <div style="flex:1;height:2px;background:var(--border);min-width:20px;margin-bottom:20px"></div>
+      {% endif %}
+      {% endif %}
+      {% endfor %}
+    </div>
+
+    {% if app.status == 'rejected' %}
+    <div style="margin-top:14px;padding:14px;border-radius:10px;background:var(--red-bg);border:1px solid rgba(184,50,48,.2);font-size:14px;color:var(--red)">
+      <i data-lucide="x-circle" style="width:16px;height:16px"></i>
+      <strong>Candidature non retenue.</strong> Ne vous découragez pas — continuez vos recherches !
+    </div>
+    
+    {% elif app.status == 'pending' %}
+    <div style="margin-top:14px;padding:14px;border-radius:10px;background:var(--orange-bg);border:1px solid var(--orange-border);font-size:14px;color:var(--orange)">
+      <i data-lucide="clock" style="width:16px;height:16px"></i>
+      <strong>Candidature en cours d'examen</strong> — Le recruteur examine votre profil et vos qualifications. Nous vous tiendrons informé des prochaines étapes !
+    </div>
+    
+    {% elif app.status == 'offer' %}
+    <div style="margin-top:14px;padding:20px;border-radius:12px;background:var(--ochre-bg);border:1px solid var(--ochre-border)">
+      <div style="font-size:16px;font-weight:700;color:var(--ochre);margin-bottom:12px;display:flex;align-items:center;gap:8px">
+        <i data-lucide="gift" style="width:18px;height:18px"></i> Offre reçue !
+      </div>
+      <p style="font-size:14px;color:var(--text-2);margin-bottom:14px;line-height:1.65">
+        Félicitations ! Le recruteur <strong>{{ app.job.company|default:"cette entreprise" }}</strong> vous a envoyé une offre pour le poste <strong>{{ app.job.title|default:"proposé" }}</strong>.
+      </p>
+      <div style="display:grid;gap:8px;margin-bottom:16px">
+        <div style="display:flex;gap:10px;align-items:flex-start;font-size:14px;color:var(--text-2)">
+          <span style="width:22px;height:22px;border-radius:50%;background:var(--ochre);color:white;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</span>
+          Examiner les détails de l'offre dans la messagerie
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;font-size:14px;color:var(--text-2)">
+          <span style="width:22px;height:22px;border-radius:50%;background:var(--ochre);color:white;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</span>
+          Répondre au recruteur (acceptation ou autres questions)
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;font-size:14px;color:var(--text-2)">
+          <span style="width:22px;height:22px;border-radius:50%;background:var(--ochre);color:white;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</span>
+          Préparer votre réponse officielle
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <a href="{% url 'ai_tools:tools' %}" class="btn btn-primary btn-sm">
+          <i data-lucide="sparkles" style="width:14px;height:14px"></i> Aide pour répondre
+        </a>
+      </div>
+    </div>
+    
+    {% elif app.status == 'interview' %}
+    <div style="margin-top:14px;padding:14px;border-radius:10px;background:var(--gold-bg);border:1px solid var(--gold-border);font-size:14px;color:var(--gold-dark)">
+      <i data-lucide="calendar-check" style="width:16px;height:16px"></i>
+      <strong>Entretien planifié</strong>
+      {% if app.interview_date %} — {{ app.interview_date|date:"d M Y à H:i" }}{% endif %}
+      <div style="margin-top:10px;padding:10px;background:white;border-radius:8px;font-size:13px;color:var(--text-2);margin-bottom:10px">
+        Préparez-vous bien ! Consultez les outils IA pour vous entraîner et améliorer vos réponses.
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <a href="{% url 'ai_tools:tools' %}" class="btn btn-primary btn-sm">
+          <i data-lucide="sparkles" style="width:14px;height:14px"></i> Préparer mon entretien
+        </a>
+      </div>
+    </div>
+    
+    {% elif app.status == 'accepted' %}
+    <div style="margin-top:14px;padding:20px;border-radius:12px;background:var(--green-bg);border:1px solid var(--green-border)">
+      <div style="font-size:16px;font-weight:700;color:var(--green);margin-bottom:12px;display:flex;align-items:center;gap:8px">
+        <i data-lucide="check-circle" style="width:18px;height:18px"></i> Félicitations — Offre acceptée !
+      </div>
+      <p style="font-size:14px;color:var(--text-2);margin-bottom:14px;line-height:1.65">
+        {% if app.job %}
+        Votre candidature pour <strong>{{ app.job.title }}</strong> chez <strong>{{ app.job.company }}</strong> a été acceptée.
+        {% else %}
+        Votre candidature a été acceptée.
+        {% endif %}
+        Voici les prochaines étapes :
+      </p>
+      <div style="display:grid;gap:8px;margin-bottom:16px">
+        <div style="display:flex;gap:10px;align-items:flex-start;font-size:14px;color:var(--text-2)">
+          <span style="width:22px;height:22px;border-radius:50%;background:var(--green);color:white;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</span>
+          Répondre au recruteur via la messagerie ci-dessous pour confirmer
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;font-size:14px;color:var(--text-2)">
+          <span style="width:22px;height:22px;border-radius:50%;background:var(--green);color:white;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</span>
+          Préparer vos documents (contrat, pièces d'identité, diplômes)
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;font-size:14px;color:var(--text-2)">
+          <span style="width:22px;height:22px;border-radius:50%;background:var(--green);color:white;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</span>
+          Utiliser l'IA pour préparer votre première semaine
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <a href="{% url 'ai_tools:tools' %}" class="btn btn-primary btn-sm">
+          <i data-lucide="sparkles" style="width:14px;height:14px"></i> Préparer mon intégration avec l'IA
+        </a>
+        <a href="{% url 'ai_tools:tools' %}" class="btn btn-secondary btn-sm">
+          <i data-lucide="mail" style="width:14px;height:14px"></i> Rédiger email de confirmation
+        </a>
+      </div>
+    </div>
+    
+    {% elif app.status in 'sent,viewed' %}
+    <div style="margin-top:14px;padding:14px;border-radius:10px;background:rgba(201,168,76,0.08);border:1px solid var(--gold-border);font-size:14px;color:var(--gold-dark)">
+      <i data-lucide="send" style="width:16px;height:16px"></i>
+      <strong>Candidature envoyée</strong> — Votre candidature a été reçue par le recruteur. Nous vous tiendrons informé dès qu'il réagira !
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Messagerie -->
+  <div class="card card-p" style="margin-bottom:20px">
+    <div style="font-size:16px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px">
+      <i data-lucide="message-circle" style="width:18px;height:18px;color:var(--gold-dark)"></i>
+      Messagerie avec le recruteur
+    </div>
+
+    <div id="msgs-list" style="min-height:160px;max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;margin-bottom:16px;padding:12px;background:rgba(255,252,235,0.5);border-radius:12px;border:1px solid var(--border)">
+      {% for msg in messages %}
+      <div style="display:flex;{% if msg.sender == request.user %}justify-content:flex-end{% endif %}">
+        <div style="max-width:72%;padding:11px 15px;border-radius:14px;font-size:14px;line-height:1.65;
+          {% if msg.sender == request.user %}background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:white;border-bottom-right-radius:4px
+          {% else %}background:white;border:1px solid var(--border);color:var(--text);border-bottom-left-radius:4px{% endif %}">
+          <div>{{ msg.content }}</div>
+          <div style="font-size:11px;margin-top:4px;opacity:0.6">{{ msg.sent_at|date:"d/m/Y H:i" }} · {{ msg.sender.get_full_name|default:msg.sender.email }}</div>
+        </div>
+      </div>
+      {% empty %}
+      <div style="text-align:center;color:var(--text-3);font-size:14px;padding:20px">
+        <i data-lucide="message-circle" style="width:28px;height:28px;margin-bottom:8px;display:block;margin:0 auto 8px"></i>
+        Aucun message pour l'instant. Vous pouvez initier la conversation.
+      </div>
+      {% endfor %}
+    </div>
+
+    {% if app.status != 'rejected' and app.status != 'withdrawn' %}
+    <div style="display:flex;gap:10px">
+      <input id="msg-input" class="form-input" placeholder="Envoyer un message au recruteur…"
+             style="flex:1" onkeydown="if(event.key==='Enter')sendMsg()"/>
+      <button onclick="sendMsg()" class="btn btn-primary btn-sm">
+        <i data-lucide="send" style="width:15px;height:15px"></i> Envoyer
+      </button>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Actions -->
+  <div style="display:flex;gap:12px;flex-wrap:wrap">
+    {% if app.job %}
+    <a href="{% url 'jobs:detail' app.job.pk %}" class="btn btn-secondary">
+      <i data-lucide="briefcase" style="width:15px;height:15px"></i> Voir l'offre
+    </a>
+    {% else %}
+    <span style="padding:10px 16px;border-radius:8px;font-size:14px;color:var(--text-3);background:var(--bg-2);border:1px solid var(--border)">
+      <i data-lucide="alert-circle" style="width:15px;height:15px"></i> Offre supprimée
+    </span>
+    {% endif %}
+    {% if app.status not in 'accepted,rejected,withdrawn' %}
+    <button onclick="withdraw()" class="btn btn-danger btn-sm">
+      <i data-lucide="x" style="width:14px;height:14px"></i> Retirer ma candidature
+    </button>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const AI_CSRF = '{{ csrf_token }}';
+const APP_PK  = {{ app.pk }};
+
+async function sendMsg() {
+  var input   = document.getElementById('msg-input');
+  var content = input.value.trim();
+  if (!content) return;
+  input.value = '';
+  var r = await fetch('/applications/' + APP_PK + '/message/', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json','X-CSRFToken':AI_CSRF},
+    body: JSON.stringify({content: content})
+  });
+  var d = await r.json();
+  if (d.ok) {
+    var list = document.getElementById('msgs-list');
+    var m    = d.message;
+    list.innerHTML += '<div style="display:flex;justify-content:flex-end"><div style="max-width:72%;padding:11px 15px;border-radius:14px;font-size:14px;line-height:1.65;background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:white;border-bottom-right-radius:4px"><div>' + m.content + '</div><div style="font-size:11px;margin-top:4px;opacity:0.6">' + m.sent_at + '</div></div></div>';
+    list.scrollTop = list.scrollHeight;
+  } else {
+    alert(d.msg);
+  }
+}
+
+async function withdraw() {
+  if (!confirm('Retirer votre candidature ?')) return;
+  var r = await fetch('/applications/' + APP_PK + '/withdraw/', {
+    method: 'POST', headers: {'X-CSRFToken': AI_CSRF}
+  });
+  var d = await r.json();
+  if (d.ok) { window.location.reload(); }
+  else { alert(d.msg || 'Erreur'); }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  var list = document.getElementById('msgs-list');
+  if (list) list.scrollTop = list.scrollHeight;
+  if (window.lucide) lucide.createIcons();
+});
+</script>
+{% endblock %}

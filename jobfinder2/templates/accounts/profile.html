@@ -1,0 +1,586 @@
+{% extends 'base.html' %}
+{% load tags %}
+{% block title %}Mon Profil — JobFinder AI{% endblock %}
+{% block np %}active{% endblock %}
+
+{% block content %}
+<div class="page-inner">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:20px;margin-bottom:30px;flex-wrap:wrap">
+    <h1 class="h1" style="margin:0">Mon Profil</h1>
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <a href="?tab=personal" class="btn btn-primary" style="font-weight:700;padding:12px 24px;font-size:15px"><i data-lucide="edit-3" style="width:16px;height:16px"></i> Modifier mon profil</a>
+      <a href="{% url 'core:dashboard' %}" class="btn btn-secondary btn-sm"><i data-lucide="arrow-left" style="width:14px;height:14px"></i> Dashboard</a>
+    </div>
+  </div>
+
+  <!-- EN-TÊTE PROFIL -->
+  <div class="card card-p" style="margin-bottom:24px;display:flex;align-items:center;gap:24px;flex-wrap:wrap">
+    <!-- Photo cliquable -->
+    <div style="position:relative;flex-shrink:0;cursor:pointer" onclick="document.getElementById('avatar-upload').click()">
+      {% if profile.avatar %}
+        <img src="{{ profile.avatar.url }}" style="width:84px;height:84px;border-radius:50%;object-fit:cover;border:3px solid var(--gold);display:block"/>
+      {% else %}
+        <div style="width:84px;height:84px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-dark));display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:32px;font-weight:700;color:white;border:3px solid var(--gold)">{{ user.first_name|first|upper|default:"?" }}</div>
+      {% endif %}
+      <div style="position:absolute;bottom:0;right:0;width:26px;height:26px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;border:2px solid white">
+        <i data-lucide="camera" style="width:13px;height:13px;color:white"></i>
+      </div>
+      <form id="avatar-form" method="post" enctype="multipart/form-data" style="display:none">
+        {% csrf_token %}<input type="hidden" name="section" value="personal"/>
+        <input type="file" id="avatar-upload" name="avatar" accept="image/*" onchange="document.getElementById('avatar-form').submit()"/>
+      </form>
+    </div>
+
+    <div style="flex:1;min-width:180px">
+      <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700">{{ user.get_full_name|default:user.email }}</div>
+      <div style="font-size:15px;color:var(--text-2);margin-top:3px">{{ profile.desired_title|default:"Titre non renseigné" }} · {{ profile.location|default:"Localisation non renseignée" }}</div>
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+        <span class="badge badge-gold">{{ user.get_plan_display }}</span>
+        {% if user.is_verified %}<span class="badge badge-green"><i data-lucide="check" style="width:12px;height:12px"></i> Vérifié</span>{% endif %}
+      </div>
+    </div>
+    <div style="min-width:220px;flex:1;max-width:300px">
+      <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:8px">
+        <span style="color:var(--text-3);font-weight:600">Complétion</span>
+        <span style="font-weight:700;color:var(--gold-dark)">{{ profile.completion_score }}%</span>
+      </div>
+      <div class="progress"><div class="progress-bar" style="width:{{ profile.completion_score }}%"></div></div>
+      {% if profile.completion_score < 80 %}
+      <div style="margin-top:10px;padding:10px 12px;border-radius:9px;background:var(--gold-bg);border:1px solid var(--gold-border);font-size:13px">
+        <i data-lucide="lightbulb" style="width:13px;height:13px;color:var(--gold-dark)"></i> Complétez pour améliorer votre matching IA.
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- IMPORT CV IA -->
+  <div class="card card-gold" style="padding:20px 24px;margin-bottom:20px">
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
+      <div style="width:44px;height:44px;border-radius:11px;background:linear-gradient(135deg,var(--gold),var(--gold-dark));display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 3px 10px var(--gold-glow)">
+        <i data-lucide="sparkles" style="width:20px;height:20px;color:white"></i>
+      </div>
+      <div style="flex:1">
+        <div style="font-size:16px;font-weight:700">Importer CV & Préremplissage IA</div>
+        <div style="font-size:14px;color:var(--text-3)">Importez votre CV — l'IA détecte compétences, langues, outils, expériences et formations</div>
+      </div>
+      <label class="btn btn-primary btn-sm" style="cursor:pointer" id="import-btn">
+        <i data-lucide="upload" style="width:15px;height:15px"></i> Importer mon CV
+        <input type="file" id="cv-import-file" accept=".pdf,.docx" style="display:none" onchange="importCV(this)"/>
+      </label>
+    </div>
+    <div id="import-progress" style="display:none;margin-top:8px">
+      <div style="height:4px;background:var(--border);border-radius:50px;overflow:hidden">
+        <div id="import-bar" style="height:100%;background:var(--gold);border-radius:50px;width:0%;transition:width 0.5s ease"></div>
+      </div>
+      <div id="import-msg" style="font-size:13px;color:var(--text-3);margin-top:6px;text-align:center"></div>
+    </div>
+  </div>
+  <div id="import-status" style="display:none;margin-bottom:16px"></div>
+  <div id="import-preview" style="display:none;margin-bottom:20px"></div>
+
+  <!-- ONGLETS -->
+  <div class="tabs-nav" style="margin-bottom:22px;max-width:620px">
+    <a href="?tab=personal"   class="tabs-btn {% if tab == 'personal' %}active{% endif %}">Infos</a>
+    <a href="?tab=experience" class="tabs-btn {% if tab == 'experience' %}active{% endif %}">Expériences</a>
+    <a href="?tab=education"  class="tabs-btn {% if tab == 'education' %}active{% endif %}">Formations</a>
+    <a href="?tab=skills"     class="tabs-btn {% if tab == 'skills' %}active{% endif %}">Compétences</a>
+    <a href="?tab=documents"  class="tabs-btn {% if tab == 'documents' %}active{% endif %}">Documents</a>
+  </div>
+
+  <!-- INFOS PERSONNELLES -->
+  {% if tab == 'personal' %}
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}<input type="hidden" name="section" value="personal"/>
+    <div class="card card-p">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+        <div class="form-group" style="margin:0"><label class="form-label">Prénom</label><input class="form-input" name="first_name" value="{{ user.first_name }}"/></div>
+        <div class="form-group" style="margin:0"><label class="form-label">Nom</label><input class="form-input" name="last_name" value="{{ user.last_name }}"/></div>
+        <div class="form-group" style="margin:0"><label class="form-label">Localisation (ville CI)</label>{{ profile_form.location }}</div>
+        <div class="form-group" style="margin:0"><label class="form-label">Téléphone</label>{{ profile_form.phone }}</div>
+        <div class="form-group" style="margin:0"><label class="form-label">LinkedIn</label>{{ profile_form.linkedin_url }}</div>
+        <div class="form-group" style="margin:0"><label class="form-label">GitHub</label>{{ profile_form.github_url }}</div>
+        <div class="form-group" style="margin:0"><label class="form-label">Titre souhaité</label>{{ profile_form.desired_title }}</div>
+        <div class="form-group" style="margin:0;grid-column:1/-1"><label class="form-label">Résumé professionnel</label>{{ profile_form.summary }}</div>
+      </div>
+      <button type="submit" class="btn btn-primary" style="margin-top:22px">Enregistrer</button>
+    </div>
+  </form>
+
+  <!-- EXPÉRIENCES -->
+  {% elif tab == 'experience' %}
+  <div style="display:grid;gap:14px;margin-bottom:22px">
+    {% for exp in experiences %}
+    <div class="card card-p" id="exp-{{ exp.pk }}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:10px">
+        <div>
+          <div style="font-size:17px;font-weight:700">{{ exp.title }}</div>
+          <div style="font-size:15px;color:var(--text-2);margin-top:2px">{{ exp.company }} · {{ exp.location }}</div>
+          <div style="font-size:13px;color:var(--text-3);margin-top:4px">{{ exp.start_date|date:"M Y" }} — {% if exp.is_current %}Présent{% else %}{{ exp.end_date|date:"M Y" }}{% endif %} · {{ exp.duration }}</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          {% if exp.is_current %}<span class="badge badge-green">En poste</span>{% endif %}
+          <a href="{% url 'accounts:update_experience' exp.pk %}" class="btn btn-primary btn-sm"><i data-lucide="edit-2" style="width:14px;height:14px"></i></a>
+          <button onclick="delExp({{ exp.pk }})" class="btn btn-danger btn-sm"><i data-lucide="trash-2" style="width:14px;height:14px"></i></button>
+        </div>
+      </div>
+      {% if exp.description %}<p style="font-size:15px;color:var(--text-2);line-height:1.7;margin-bottom:10px">{{ exp.description }}</p>{% endif %}
+      {% if exp.technologies %}
+      <div style="display:flex;flex-wrap:wrap;gap:7px">
+        {% for tech in exp.technologies|split:"," %}
+        <span style="padding:4px 12px;background:var(--cream-2);border:1px solid var(--border-2);border-radius:7px;font-size:13px;font-weight:600;color:var(--text-2)">{{ tech }}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    {% empty %}
+    <div class="card card-p" style="text-align:center;color:var(--text-3);padding:36px"><i data-lucide="briefcase" style="width:36px;height:36px;display:block;margin:0 auto 12px;color:var(--border-2)"></i><p>Aucune expérience. Ajoutez-en ci-dessous.</p></div>
+    {% endfor %}
+  </div>
+  <div class="card card-p">
+    <div style="font-size:17px;font-weight:700;margin-bottom:20px">+ Ajouter une expérience</div>
+    <form method="post">{% csrf_token %}<input type="hidden" name="section" value="experience"/>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="form-group" style="margin:0"><label class="form-label">Titre du poste *</label>{{ exp_form.title }}</div>
+        <div class="form-group" style="margin:0"><label class="form-label">Entreprise *</label>{{ exp_form.company }}</div>
+        <div class="form-group" style="margin:0"><label class="form-label">Ville (CI)</label>{{ exp_form.location }}</div>
+        <div class="form-group" style="margin:0"><label class="form-label">Technologies</label>{{ exp_form.technologies }}</div>
+        <div class="form-group" style="margin:0"><label class="form-label">Date début *</label>{{ exp_form.start_date }}</div>
+        <div class="form-group" style="margin:0"><label class="form-label">Date fin</label>{{ exp_form.end_date }}</div>
+        <div class="form-group" style="margin:0;grid-column:1/-1"><label class="form-label">Description</label>{{ exp_form.description }}</div>
+        <div style="display:flex;align-items:center;gap:9px"><input type="checkbox" name="is_current" id="is_current" style="width:18px;height:18px;accent-color:var(--gold)"/><label for="is_current" style="font-size:15px;font-weight:600;cursor:pointer">Poste actuel</label></div>
+      </div>
+      <button type="submit" class="btn btn-primary" style="margin-top:20px">Ajouter</button>
+    </form>
+  </div>
+
+  <!-- FORMATIONS -->
+  {% elif tab == 'education' %}
+  <div style="display:grid;gap:12px;margin-bottom:22px">
+    {% for edu in educations %}
+    <div class="card card-p" style="display:flex;gap:16px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap">
+      <div style="flex:1;display:flex;gap:16px">
+        <div style="width:46px;height:46px;border-radius:11px;background:var(--gold-bg);border:1px solid var(--gold-border);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i data-lucide="graduation-cap" style="width:20px;height:20px;color:var(--gold-dark)"></i></div>
+        <div style="flex:1">
+          <div style="font-size:17px;font-weight:700">{{ edu.degree }}</div>
+          <div style="font-size:15px;color:var(--text-2);margin-top:2px">{{ edu.institution }} · {{ edu.location }}</div>
+          <div style="font-size:13px;color:var(--text-3);margin-top:4px">{{ edu.start_year }} – {{ edu.end_year|default:"En cours" }}{% if edu.gpa %} · {{ edu.gpa }}{% endif %}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <a href="{% url 'accounts:update_education' edu.pk %}" class="btn btn-primary btn-sm"><i data-lucide="edit-2" style="width:14px;height:14px"></i></a>
+        <button onclick="delEdu({{ edu.pk }})" class="btn btn-danger btn-sm"><i data-lucide="trash-2" style="width:14px;height:14px"></i></button>
+      </div>
+    </div>
+    {% empty %}
+    <div class="card card-p" style="text-align:center;color:var(--text-3);padding:36px"><i data-lucide="graduation-cap" style="width:36px;height:36px;display:block;margin:0 auto 12px;color:var(--border-2)"></i><p>Aucune formation.</p></div>
+    {% endfor %}
+  </div>
+  <div class="card card-p">
+    <div style="font-size:17px;font-weight:700;margin-bottom:20px">+ Ajouter une formation</div>
+    <form method="post">{% csrf_token %}<input type="hidden" name="section" value="education"/>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="form-group" style="margin:0"><label class="form-label">Diplôme *</label>{{ edu_form.degree }}</div>
+        <div class="form-group" style="margin:0"><label class="form-label">Établissement *</label>{{ edu_form.institution }}</div>
+        <div class="form-group" style="margin:0"><label class="form-label">Ville</label>{{ edu_form.location }}</div>
+        <div class="form-group" style="margin:0"><label class="form-label">Mention / Note</label>{{ edu_form.gpa }}</div>
+        <div class="form-group" style="margin:0"><label class="form-label">Année début</label>{{ edu_form.start_year }}</div>
+        <div class="form-group" style="margin:0"><label class="form-label">Année fin</label>{{ edu_form.end_year }}</div>
+      </div>
+      <button type="submit" class="btn btn-primary" style="margin-top:20px">Ajouter</button>
+    </form>
+  </div>
+
+  <!-- COMPÉTENCES -->
+  {% elif tab == 'skills' %}
+  <div class="card card-p" style="margin-bottom:20px">
+    <div style="font-size:17px;font-weight:700;margin-bottom:18px">Mes compétences</div>
+    {% regroup skills by get_category_display as groups %}
+    {% for g in groups %}
+    <div style="margin-bottom:20px">
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-3);margin-bottom:10px">{{ g.grouper }}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:10px">
+        {% for sk in g.list %}
+        <div style="display:inline-flex;align-items:center;gap:8px;padding:7px 14px;background:var(--cream-2);border:1.5px solid var(--border-2);border-radius:9px;font-size:14px;font-weight:600;color:var(--text)">
+          <span>{{ sk.name }}</span>
+          {% if sk.level %}<span style="font-size:12px;color:var(--text-3);font-weight:500">· {{ sk.get_level_display }}</span>{% endif %}
+          <button type="button"
+            onclick="delSkill({{ sk.pk }}, this.parentElement)"
+            style="background:none;border:none;cursor:pointer;color:var(--text-3);padding:0;width:18px;height:18px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:all 0.2s"
+            onmouseover="this.style.background='var(--red-bg)';this.style.color='var(--red)'"
+            onmouseout="this.style.background='none';this.style.color='var(--text-3)'">
+            <i data-lucide="x" style="width:13px;height:13px;pointer-events:none"></i>
+          </button>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% empty %}
+    <div style="text-align:center;color:var(--text-3);padding:24px"><i data-lucide="settings" style="width:32px;height:32px;display:block;margin:0 auto 10px;color:var(--border-2)"></i><p>Aucune compétence. Ajoutez-en ci-dessous.</p></div>
+    {% endfor %}
+  </div>
+  <div class="card card-p">
+    <div style="font-size:17px;font-weight:700;margin-bottom:16px">+ Ajouter une compétence</div>
+    <form method="post">{% csrf_token %}<input type="hidden" name="section" value="skill"/>
+      <div style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:12px;align-items:end">
+        <div class="form-group" style="margin:0"><label class="form-label">Nom *</label><input class="form-input" name="skill_name" placeholder="Python, Excel, Français…"/></div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Catégorie</label>
+          <select class="form-input" name="skill_category" id="skill-cat-select">
+            <option value="technical">Technique</option>
+            <option value="language">Langue</option>
+            <option value="soft">Soft skill</option>
+            <option value="tool">Outil</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin:0" id="level-group">
+          <label class="form-label">Niveau (langue)</label>
+          <select class="form-input" name="skill_level">
+            <option value="">—</option>
+            <option value="debutant">Débutant (A1/A2)</option>
+            <option value="intermediaire">Intermédiaire (B1/B2)</option>
+            <option value="avance">Avancé (C1)</option>
+            <option value="bilingue">Bilingue / Natif</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm" style="align-self:flex-end">Ajouter</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- DOCUMENTS -->
+  {% elif tab == 'documents' %}
+  <div class="card card-p">
+    <div style="font-size:17px;font-weight:700;margin-bottom:20px">Mes documents</div>
+    <form method="post" enctype="multipart/form-data">{% csrf_token %}<input type="hidden" name="section" value="cv_upload"/>
+      <div style="border:2px dashed var(--border-2);border-radius:14px;padding:40px;text-align:center;cursor:pointer;transition:all 0.25s;margin-bottom:22px"
+        onmouseover="this.style.borderColor='var(--gold)';this.style.background='#FEFDF8'"
+        onmouseout="this.style.borderColor='var(--border-2)';this.style.background='transparent'"
+        onclick="document.getElementById('cv-upload-doc').click()">
+        <i data-lucide="file-text" style="width:44px;height:44px;display:block;margin:0 auto 14px;color:var(--border-2)"></i>
+        <div style="font-size:17px;font-weight:700;margin-bottom:7px">Uploader votre CV</div>
+        <div style="font-size:14px;color:var(--text-3);margin-bottom:16px">PDF, DOCX · max 10 MB</div>
+        <input type="file" id="cv-upload-doc" name="cv_file" accept=".pdf,.doc,.docx" style="display:none" onchange="this.form.submit()"/>
+        <span class="btn btn-primary btn-sm">Choisir un fichier</span>
+      </div>
+    </form>
+    {% if profile.cv_file %}
+    <div style="background:var(--cream-2);border:1px solid var(--border);border-radius:12px;padding:18px;display:flex;align-items:center;gap:14px">
+      <i data-lucide="file-text" style="width:32px;height:32px;color:var(--gold-dark);flex-shrink:0"></i>
+      <div style="flex:1">
+        <div style="font-size:16px;font-weight:700">{{ profile.cv_file.name }}</div>
+        <div style="font-size:13px;color:var(--text-3)">Mis en ligne {{ profile.cv_uploaded_at|date:"d M Y"|default:"" }}</div>
+      </div>
+      <span class="badge badge-green"><i data-lucide="check" style="width:12px;height:12px"></i> Actif</span>
+      <a href="{{ profile.cv_file.url }}" class="btn btn-secondary btn-sm" download><i data-lucide="download" style="width:14px;height:14px"></i> Télécharger</a>
+    </div>
+    {% else %}
+    <p style="text-align:center;color:var(--text-3);font-size:15px">Aucun CV uploadé.</p>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Use unique prefix to avoid conflict with base.html CSRF variable
+const PROFILE_CSRF = '{{ csrf_token }}';
+
+// Show/hide language level field
+var catSelect = document.getElementById('skill-cat-select');
+var lvlGroup  = document.getElementById('level-group');
+if (catSelect && lvlGroup) {
+  function toggleLevel() {
+    lvlGroup.style.opacity   = catSelect.value === 'language' ? '1' : '0.3';
+    lvlGroup.style.pointerEvents = catSelect.value === 'language' ? 'auto' : 'none';
+  }
+  catSelect.addEventListener('change', toggleLevel);
+  toggleLevel();
+}
+
+// DELETE SKILL — using button.parentElement
+async function delSkill(pk, el) {
+  if (!confirm('Supprimer cette compétence ?')) return;
+  try {
+    const r = await fetch('/auth/profile/skill/' + pk + '/delete/', {
+      method: 'POST',
+      headers: { 'X-CSRFToken': PROFILE_CSRF, 'Content-Type': 'application/json' }
+    });
+    const d = await r.json();
+    if (d.ok) {
+      el.style.transition = 'all 0.3s';
+      el.style.opacity = '0';
+      el.style.transform = 'scale(0.8)';
+      setTimeout(() => el.remove(), 300);
+    } else {
+      alert('Erreur lors de la suppression');
+    }
+  } catch(e) {
+    alert('Erreur réseau: ' + e.message);
+  }
+}
+
+// DELETE EXPERIENCE
+async function delExp(pk) {
+  if (!confirm('Supprimer cette expérience ?')) return;
+  try {
+    const r = await fetch('/auth/profile/experience/' + pk + '/delete/', {
+      method: 'POST',
+      headers: { 'X-CSRFToken': PROFILE_CSRF }
+    });
+    const d = await r.json();
+    if (d.ok) {
+      const el = document.getElementById('exp-' + pk);
+      if (el) { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }
+    }
+  } catch(e) { alert('Erreur: ' + e.message); }
+}
+
+// DELETE EDUCATION
+async function delEdu(pk) {
+  if (!confirm('Supprimer cette formation ?')) return;
+  try {
+    const r = await fetch('/auth/profile/education/' + pk + '/delete/', {
+      method: 'POST',
+      headers: { 'X-CSRFToken': PROFILE_CSRF }
+    });
+    const d = await r.json();
+    if (d.ok) {
+      location.reload();
+    }
+  } catch(e) { alert('Erreur: ' + e.message); }
+}
+
+// ── IMPORT CV IA ────────────────────────────────────
+var importedCVData = null;  // stored globally for confirmImport
+
+async function importCV(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const status   = document.getElementById('import-status');
+  const preview  = document.getElementById('import-preview');
+  const progress = document.getElementById('import-progress');
+  const bar      = document.getElementById('import-bar');
+  const msg      = document.getElementById('import-msg');
+  const btn      = document.getElementById('import-btn');
+
+  // Show progress
+  status.style.display   = 'none';
+  preview.style.display  = 'none';
+  progress.style.display = 'block';
+  bar.style.width        = '20%';
+  msg.textContent        = 'Lecture du fichier…';
+  btn.style.opacity      = '0.6';
+  btn.style.pointerEvents= 'none';
+
+  const formData = new FormData();
+  formData.append('cv_file', file);
+
+  try {
+    bar.style.width  = '40%';
+    msg.textContent  = "Analyse IA en cours…";
+
+    const r = await fetch('/ai/cv/import/', {
+      method: 'POST',
+      headers: {'X-CSRFToken': PROFILE_CSRF},
+      body: formData
+    });
+
+    bar.style.width  = '80%';
+    msg.textContent  = 'Traitement des résultats…';
+
+    const d = await r.json();
+
+    bar.style.width  = '100%';
+    progress.style.display = 'none';
+    btn.style.opacity = '1';
+    btn.style.pointerEvents = 'auto';
+
+    if (d.ok && d.data) {
+      importedCVData = d.data;
+      status.style.display = 'block';
+      status.innerHTML = '<div style="padding:12px 16px;border-radius:10px;background:var(--green-bg);border:1px solid var(--green-border);color:var(--green);font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px">' +
+        '<i data-lucide="check-circle" style="width:15px;height:15px"></i>' +
+        'CV analysé avec succès ! Vérifiez les informations ci-dessous et cliquez Appliquer.</div>';
+      
+      renderImportPreview(d.data);
+    } else {
+      status.style.display = 'block';
+      status.innerHTML = '<div style="padding:12px 16px;border-radius:10px;background:var(--red-bg);border:1px solid rgba(184,50,48,.2);color:var(--red);font-size:14px">' +
+        '<i data-lucide="alert-circle" style="width:15px;height:15px"></i> ' +
+        (d.error || "Erreur lors de l'analyse") + '</div>';
+    }
+  } catch(e) {
+    progress.style.display = 'none';
+    btn.style.opacity = '1';
+    btn.style.pointerEvents = 'auto';
+    status.style.display = 'block';
+    status.innerHTML = '<div style="padding:12px 16px;border-radius:10px;background:var(--red-bg);color:var(--red);font-size:14px">Erreur réseau: ' + e.message + '</div>';
+  }
+  if (window.lucide) lucide.createIcons();
+}
+
+function renderImportPreview(data) {
+  const preview = document.getElementById('import-preview');
+
+  let html = '<div class="card card-p" style="border:1.5px solid var(--gold-border);background:linear-gradient(135deg,rgba(255,252,235,.98),rgba(255,248,215,.95))">';
+  html += '<div style="font-size:17px;font-weight:700;margin-bottom:18px;display:flex;align-items:center;gap:8px">';
+  html += '<i data-lucide="sparkles" style="width:18px;height:18px;color:var(--gold-dark)"></i> Données extraites — vérifiez avant d\'appliquer</div>';
+
+  // Identité
+  if (data.name || data.title || data.location) {
+    html += '<div style="background:white;border-radius:10px;padding:14px;margin-bottom:12px">';
+    html += '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text-3);margin-bottom:8px">Identité</div>';
+    if (data.name)     html += '<div style="font-size:15px;font-weight:700;margin-bottom:4px">' + data.name + '</div>';
+    if (data.title)    html += '<div style="font-size:14px;color:var(--text-2);margin-bottom:4px">' + data.title + '</div>';
+    if (data.location) html += '<div style="font-size:13px;color:var(--text-3)"><i data-lucide="map-pin" style="width:12px;height:12px"></i> ' + data.location + '</div>';
+    html += '</div>';
+  }
+
+  // Résumé
+  if (data.summary) {
+    html += '<div style="background:white;border-radius:10px;padding:14px;margin-bottom:12px">';
+    html += '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text-3);margin-bottom:8px">Résumé</div>';
+    html += '<p style="font-size:14px;color:var(--text-2);line-height:1.65">' + data.summary + '</p>';
+    html += '</div>';
+  }
+
+  // Compétences par catégorie
+  const skillSections = [
+    {key: 'skills_technical', label: 'Compétences techniques', color: 'var(--blue)', bg: 'var(--blue-bg)'},
+    {key: 'skills_tools',     label: 'Outils',                 color: 'var(--gold-dark)', bg: 'var(--gold-bg)'},
+    {key: 'skills_soft',      label: 'Soft skills',            color: 'var(--green)', bg: 'var(--green-bg)'},
+    {key: 'skills_certifications', label: 'Certifications',    color: 'var(--orange)', bg: 'var(--orange-bg)'},
+    {key: 'skills',           label: 'Compétences générales',  color: 'var(--text-2)', bg: 'var(--cream-2)'},
+  ];
+
+  let hasSkills = false;
+  let skillsHTML = '<div style="background:white;border-radius:10px;padding:14px;margin-bottom:12px">';
+  skillsHTML += '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text-3);margin-bottom:10px">Compétences détectées</div>';
+
+  skillSections.forEach(function(sec) {
+    const items = data[sec.key];
+    if (items && items.length) {
+      hasSkills = true;
+      skillsHTML += '<div style="margin-bottom:10px">';
+      skillsHTML += '<div style="font-size:11px;font-weight:700;color:' + sec.color + ';margin-bottom:6px;text-transform:uppercase;letter-spacing:.6px">' + sec.label + ' (' + items.length + ')</div>';
+      skillsHTML += '<div style="display:flex;flex-wrap:wrap;gap:6px">';
+      items.forEach(function(s) {
+        skillsHTML += '<span style="padding:3px 10px;background:' + sec.bg + ';border-radius:6px;font-size:13px;font-weight:600;color:' + sec.color + '">' + s + '</span>';
+      });
+      skillsHTML += '</div></div>';
+    }
+  });
+
+  // Langues
+  if (data.languages && data.languages.length) {
+    hasSkills = true;
+    skillsHTML += '<div style="margin-bottom:6px">';
+    skillsHTML += '<div style="font-size:11px;font-weight:700;color:var(--text-3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.6px">Langues</div>';
+    skillsHTML += '<div style="display:flex;flex-wrap:wrap;gap:6px">';
+    data.languages.forEach(function(l) {
+      const name = typeof l === 'string' ? l : (l.name || '');
+      const lvl  = typeof l === 'object' ? (l.level || '') : '';
+      skillsHTML += '<span style="padding:3px 10px;background:rgba(26,78,122,.08);border:1px solid rgba(26,78,122,.2);border-radius:6px;font-size:13px;font-weight:600;color:var(--blue)">' + name + (lvl ? ' · ' + lvl : '') + '</span>';
+    });
+    skillsHTML += '</div></div>';
+  }
+
+  skillsHTML += '</div>';
+  if (hasSkills) html += skillsHTML;
+
+  // Expériences
+  if (data.experiences && data.experiences.length) {
+    html += '<div style="background:white;border-radius:10px;padding:14px;margin-bottom:12px">';
+    html += '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text-3);margin-bottom:10px">Expériences (' + data.experiences.length + ')</div>';
+    data.experiences.forEach(function(e) {
+      html += '<div style="border-left:3px solid var(--gold);padding:10px 14px;margin-bottom:8px;background:var(--cream-2);border-radius:0 8px 8px 0">';
+      html += '<div style="font-size:15px;font-weight:700">' + (e.title||'') + '</div>';
+      html += '<div style="font-size:13px;color:var(--text-2)">' + (e.company||'') + (e.location ? ' · ' + e.location : '') + '</div>';
+      html += '<div style="font-size:12px;color:var(--text-3);margin-top:3px">' + (e.start_date||'?') + ' → ' + (e.is_current ? 'Présent' : (e.end_date||'?')) + '</div>';
+      if (e.technologies) html += '<div style="font-size:12px;color:var(--gold-dark);margin-top:4px;font-weight:600">' + e.technologies + '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+
+  // Formations
+  if (data.educations && data.educations.length) {
+    html += '<div style="background:white;border-radius:10px;padding:14px;margin-bottom:12px">';
+    html += '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text-3);margin-bottom:10px">Formations (' + data.educations.length + ')</div>';
+    data.educations.forEach(function(e) {
+      html += '<div style="border-left:3px solid var(--border-2);padding:8px 12px;margin-bottom:6px">';
+      html += '<div style="font-size:15px;font-weight:700">' + (e.degree||'') + '</div>';
+      html += '<div style="font-size:13px;color:var(--text-2)">' + (e.institution||'') + '</div>';
+      html += '<div style="font-size:12px;color:var(--text-3)">' + (e.start_year||'') + ' – ' + (e.end_year||'En cours') + (e.gpa ? ' · ' + e.gpa : '') + '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+
+  html += '<div style="display:flex;gap:12px;margin-top:16px">';
+  html += '<button onclick="confirmImport()" class="btn btn-primary" style="flex:1">';
+  html += '<i data-lucide="check" style="width:15px;height:15px"></i> Appliquer au profil</button>';
+  html += '<button onclick="document.getElementById(\'import-preview\').style.display=\'none\';document.getElementById(\'import-status\').style.display=\'none\';" class="btn btn-secondary">Annuler</button>';
+  html += '</div></div>';
+
+  preview.innerHTML = html;
+  preview.style.display = 'block';
+  if (window.lucide) lucide.createIcons();
+}
+
+async function confirmImport() {
+  if (!importedCVData) { alert('Aucune donnée à importer.'); return; }
+
+  // Find button safely without relying on event
+  var btn  = document.querySelector('#import-preview .btn-primary');
+  var orig = btn ? btn.innerHTML : '';
+  if (btn) { btn.innerHTML = '<span class="spinner"></span> Application en cours…'; btn.disabled = true; }
+
+  try {
+    var payload = JSON.stringify(importedCVData);
+    var r = await fetch('/auth/profile/apply-cv-import/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': PROFILE_CSRF,
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      body: payload
+    });
+
+    // Check if response is JSON (not HTML redirect)
+    var contentType = r.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      var text = await r.text();
+      throw new Error('Réponse inattendue du serveur. Rechargez la page et réessayez.');
+    }
+
+    var d = await r.json();
+    if (d.ok) {
+      if (btn) { btn.innerHTML = '<i data-lucide="check-circle" style="width:15px;height:15px"></i> Appliqué !'; btn.style.background = 'var(--green)'; }
+      var status = document.getElementById('import-status');
+      if (status) status.innerHTML = '<div style="padding:12px 16px;border-radius:10px;background:var(--green-bg);border:1px solid var(--green-border);color:var(--green);font-size:14px;font-weight:600">Profil mis à jour ! Redirection…</div>';
+      setTimeout(function() { window.location.href = '/auth/profile/?tab=skills&imported=1'; }, 900);
+    } else {
+      if (btn) { btn.innerHTML = orig; btn.disabled = false; }
+      alert('Erreur: ' + (d.error || 'Inconnue'));
+    }
+  } catch(e) {
+    if (btn) { btn.innerHTML = orig; btn.disabled = false; }
+    alert('Erreur: ' + e.message);
+  }
+  if (window.lucide) lucide.createIcons();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  if (window.lucide) lucide.createIcons();
+  {% if request.GET.imported %}
+  document.getElementById('import-status').style.display = 'block';
+  document.getElementById('import-status').innerHTML = '<div style="padding:12px 16px;border-radius:10px;background:var(--green-bg);border:1px solid var(--green-border);color:var(--green);font-size:14px;font-weight:600">Profil mis à jour depuis votre CV !</div>';
+  {% endif %}
+});
+</script>
+{% endblock %}

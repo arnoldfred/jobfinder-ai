@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+{% load tags %}
+{% block title %}Mes alertes emploi — JobFinder AI{% endblock %}
+{% block content %}
+<div class="page-inner">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;margin-bottom:28px">
+    <div>
+      <h1 class="h1">Alertes emploi</h1>
+      <p class="body" style="color:var(--text-2);margin-top:6px">Soyez notifié dès qu'une offre correspond à vos critères</p>
+    </div>
+    <button onclick="document.getElementById('form-alert').style.display=document.getElementById('form-alert').style.display==='none'?'block':'none'" class="btn btn-primary">
+      <i data-lucide="plus" style="width:16px;height:16px"></i> Créer une alerte
+    </button>
+  </div>
+
+  <!-- FORMULAIRE CRÉATION -->
+  <div id="form-alert" style="display:{% if not alerts %}block{% else %}none{% endif %}">
+  <form method="post" class="card card-p" style="margin-bottom:24px">
+    {% csrf_token %}
+    <h2 style="font-size:18px;font-weight:700;margin-bottom:20px">Nouvelle alerte</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;flex-wrap:wrap">
+      <div style="grid-column:1/-1">
+        <label class="form-label">Nom de l'alerte *</label>
+        <input class="form-input" name="label" placeholder="ex: Data Engineer Abidjan" required/>
+      </div>
+      <div style="grid-column:1/-1">
+        <label class="form-label">Mots-clés</label>
+        <input class="form-input" name="keywords" placeholder="ex: Python, Data, Machine Learning"/>
+      </div>
+      <div>
+        <label class="form-label">Domaine</label>
+        <select class="form-input" name="domain">
+          <option value="">Tous les domaines</option>
+          {% for val,lbl in domains %}<option value="{{ val }}">{{ lbl }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Type de contrat</label>
+        <select class="form-input" name="job_type">
+          <option value="">Tous types</option>
+          {% for val,lbl in types %}<option value="{{ val }}">{{ lbl }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Pays</label>
+        <select class="form-input" name="country">
+          <option value="">Tous pays</option>
+          {% for val,lbl in countries %}<option value="{{ val }}">{{ lbl }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Score minimum</label>
+        <div style="display:flex;align-items:center;gap:12px">
+          <input type="range" name="min_score" min="40" max="90" value="60" step="5" style="flex:1;accent-color:var(--gold)" oninput="document.getElementById('score-val').textContent=this.value+'%'"/>
+          <span id="score-val" style="font-size:16px;font-weight:700;color:var(--gold-dark);min-width:40px">60%</span>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:20px;display:flex;gap:10px">
+      <button type="submit" class="btn btn-primary">Créer l'alerte</button>
+      <button type="button" onclick="document.getElementById('form-alert').style.display='none'" class="btn btn-secondary">Annuler</button>
+    </div>
+  </form>
+  </div>
+
+  <!-- LISTE ALERTES -->
+  <div style="display:grid;gap:14px">
+    {% for alert in alerts %}
+    <div class="card card-p" id="alert-{{ alert.pk }}" style="display:flex;align-items:flex-start;gap:18px;flex-wrap:wrap">
+      <div style="width:44px;height:44px;border-radius:11px;background:{% if alert.is_active %}var(--gold-bg){% else %}var(--border){% endif %};border:1px solid {% if alert.is_active %}var(--gold-border){% else %}var(--border-2){% endif %};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <i data-lucide="bell{% if not alert.is_active %}-off{% endif %}" style="width:20px;height:20px;color:{% if alert.is_active %}var(--gold-dark){% else %}var(--text-3){% endif %}"></i>
+      </div>
+      <div style="flex:1;min-width:200px">
+        <div style="font-size:17px;font-weight:700;color:var(--text){% if not alert.is_active %};opacity:0.5{% endif %}">{{ alert.label }}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">
+          {% if alert.keywords %}<span class="badge badge-gray"><i data-lucide="search" style="width:12px;height:12px"></i> {{ alert.keywords }}</span>{% endif %}
+          {% if alert.domain %}<span class="badge badge-gray">{{ alert.get_domain_display }}</span>{% endif %}
+          {% if alert.job_type %}<span class="badge badge-gray">{{ alert.get_job_type_display }}</span>{% endif %}
+          {% if alert.country %}<span class="badge badge-gray">{{ alert.get_country_display }}</span>{% endif %}
+          <span class="badge badge-gold">Score ≥ {{ alert.min_score }}%</span>
+          {% if alert.last_sent %}<span class="badge badge-gray" style="font-size:12px">Dernière notif : {{ alert.last_sent|date:"d M Y" }}</span>{% endif %}
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-shrink:0">
+        <button onclick="toggleAlert({{ alert.pk }}, this)" class="btn btn-sm {% if alert.is_active %}btn-secondary{% else %}btn-primary{% endif %}" style="font-size:13px">
+          {% if alert.is_active %}<i data-lucide="bell-off" style="width:14px;height:14px"></i> Pause{% else %}<i data-lucide="bell" style="width:14px;height:14px"></i> Activer{% endif %}
+        </button>
+        <button onclick="deleteAlert({{ alert.pk }})" class="btn btn-sm" style="font-size:13px;background:var(--red-bg);color:var(--red);border:1px solid rgba(184,50,48,.2)">
+          <i data-lucide="trash-2" style="width:14px;height:14px"></i>
+        </button>
+      </div>
+    </div>
+    {% empty %}
+    <div class="card card-p" style="text-align:center;padding:60px">
+      <i data-lucide="bell-off" style="width:48px;height:48px;color:var(--border-2);margin-bottom:16px"></i>
+      <div class="h3" style="margin-bottom:10px">Aucune alerte active</div>
+      <p class="body" style="color:var(--text-2)">Créez une alerte pour être notifié des nouvelles offres.</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+const CSRF = '{{ csrf_token }}';
+async function toggleAlert(pk, btn) {
+  const r = await fetch(`/jobs/alertes/${pk}/toggle/`, {method:'POST',headers:{'X-CSRFToken':CSRF}});
+  const d = await r.json();
+  if (d.ok) location.reload();
+}
+async function deleteAlert(pk) {
+  if (!confirm('Supprimer cette alerte ?')) return;
+  const r = await fetch(`/jobs/alertes/${pk}/delete/`, {method:'POST',headers:{'X-CSRFToken':CSRF}});
+  if ((await r.json()).ok) document.getElementById('alert-'+pk).remove();
+}
+</script>
+{% endblock %}

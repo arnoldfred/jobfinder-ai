@@ -1,0 +1,225 @@
+{% extends 'base.html' %}
+{% load tags %}
+{% block title %}Offres d'emploi — JobFinder AI{% endblock %}
+{% block nj %}active{% endblock %}
+
+{% block content %}
+<div class="page-inner">
+  <div style="margin-bottom:28px">
+    <h1 class="h1">Offres d'emploi</h1>
+    <p class="body" style="color:var(--text-2);margin-top:6px">{{ total }} offre{{ total|pluralize }} disponible{{ total|pluralize }}</p>
+  </div>
+
+  <!-- FILTERS -->
+  <form method="get" style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);padding:20px 24px;margin-bottom:24px">
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+      <div style="flex:2;min-width:200px">
+        <label class="form-label">Recherche</label>
+        <input class="form-input" name="q" value="{{ filters.q }}" placeholder="Titre, compétence, entreprise…"/>
+      </div>
+      <div style="flex:1;min-width:140px">
+        <label class="form-label">Pays</label>
+        <select class="form-input" name="country">
+          <option value="">Tous</option>
+          {% for c,n in countries %}<option value="{{ c }}" {% if filters.country == c %}selected{% endif %}>{{ n }}</option>{% endfor %}
+        </select>
+      </div>
+      <div style="flex:1;min-width:140px">
+        <label class="form-label">Domaine</label>
+        <select class="form-input" name="domain">
+          <option value="">Tous</option>
+          {% for c,n in domains %}<option value="{{ c }}" {% if filters.domain == c %}selected{% endif %}>{{ n }}</option>{% endfor %}
+        </select>
+      </div>
+      <div style="flex:1;min-width:120px">
+        <label class="form-label">Type</label>
+        <select class="form-input" name="type">
+          <option value="">Tous</option>
+          {% for c,n in types %}<option value="{{ c }}" {% if filters.type == c %}selected{% endif %}>{{ n }}</option>{% endfor %}
+        </select>
+      </div>
+      <div style="flex:1;min-width:120px">
+        <label class="form-label">Trier par</label>
+        <select class="form-input" name="sort">
+          <option value="score"      {% if filters.sort == 'score' %}selected{% endif %}>Meilleur match</option>
+          <option value="-posted_at" {% if filters.sort == '-posted_at' %}selected{% endif %}>Plus récentes</option>
+          <option value="title"      {% if filters.sort == 'title' %}selected{% endif %}>Titre A–Z</option>
+        </select>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding-bottom:4px">
+        <input type="checkbox" id="rem" name="remote" value="1" {% if filters.remote %}checked{% endif %} style="width:18px;height:18px;accent-color:var(--gold);cursor:pointer"/>
+        <label for="rem" style="font-size:15px;font-weight:600;cursor:pointer">Remote</label>
+      </div>
+      <div style="display:flex;gap:8px;align-self:flex-end">
+        <button type="submit" class="btn btn-primary btn-sm">Rechercher</button>
+        <a href="{% url 'jobs:list' %}" class="btn btn-secondary btn-sm">Reset</a>
+      </div>
+    </div>
+  </form>
+
+  <!-- SOURCE FILTER PILLS -->
+  <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+    <a href="?{% for k,v in request.GET.items %}{% if k != 'source' and k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}"
+       style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:20px;font-size:14px;font-weight:600;text-decoration:none;border:1.5px solid {% if not filters.source %}var(--gold){% else %}var(--border-2){% endif %};background:{% if not filters.source %}var(--gold-bg){% else %}var(--white){% endif %};color:{% if not filters.source %}var(--gold-dark){% else %}var(--text-2){% endif %};transition:all 0.2s">
+      <i data-lucide="layers" style="width:15px;height:15px"></i> Toutes
+    </a>
+    <a href="?{% for k,v in request.GET.items %}{% if k != 'source' and k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}source=employer"
+       style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:20px;font-size:14px;font-weight:600;text-decoration:none;border:1.5px solid {% if filters.source == 'employer' %}var(--green){% else %}var(--border-2){% endif %};background:{% if filters.source == 'employer' %}var(--green-bg){% else %}var(--white){% endif %};color:{% if filters.source == 'employer' %}var(--green){% else %}var(--text-2){% endif %};transition:all 0.2s">
+      <i data-lucide="building-2" style="width:15px;height:15px"></i> Recruteur direct
+    </a>
+    <a href="?{% for k,v in request.GET.items %}{% if k != 'source' and k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}source=scraping"
+       style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:20px;font-size:14px;font-weight:600;text-decoration:none;border:1.5px solid {% if filters.source == 'scraping' %}var(--blue){% else %}var(--border-2){% endif %};background:{% if filters.source == 'scraping' %}var(--blue-bg){% else %}var(--white){% endif %};color:{% if filters.source == 'scraping' %}var(--blue-dark){% else %}var(--text-2){% endif %};transition:all 0.2s">
+      <i data-lucide="rss" style="width:15px;height:15px"></i> Offres scrapées
+    </a>
+  </div>
+
+  <!-- RESULTS -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px">
+    <span class="body" style="font-weight:600"><span style="color:var(--gold)">{{ total }}</span> résultat{{ total|pluralize }}{% if filters.q %} pour «{{ filters.q }}»{% endif %}</span>
+    {% if page_obj.paginator.num_pages > 1 %}<span class="caption">Page {{ page_obj.number }}/{{ page_obj.paginator.num_pages }}</span>{% endif %}
+  </div>
+
+  <div style="display:grid;gap:14px">
+    {% for item in jobs_data %}{% with job=item.job score=item.score saved=item.saved %}
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);padding:22px 24px;display:flex;align-items:flex-start;gap:18px;transition:all 0.25s" onmouseover="this.style.boxShadow='var(--shadow-md)';this.style.borderColor='var(--border-2)';this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='none';this.style.borderColor='var(--border)';this.style.transform='translateY(0)'">
+      <a href="{% url 'jobs:detail' job.pk %}" style="display:flex;gap:18px;align-items:flex-start;flex:1;text-decoration:none;min-width:0">
+        <div style="width:56px;height:56px;border-radius:12px;background:var(--cream-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;overflow:hidden">
+          {% if job.company_logo %}<img src="{{ job.company_logo.url }}" style="width:100%;height:100%;object-fit:contain"/>
+          {% else %}<i data-lucide="{{ job.domain_icon }}" style="width:24px;height:24px"></i>{% endif %}
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ job.title }}</div>
+          <div style="font-size:15px;color:var(--text-2);margin-bottom:10px">{{ job.company }}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+            <span class="badge badge-gray">{{ job.flag }} {{ job.location }}</span>
+            <span class="badge badge-gray">{{ job.get_job_type_display }}</span>
+            {% if job.is_remote %}<span class="badge badge-blue"><i data-lucide="globe" style="width:16px;height:16px;"></i> Remote</span>{% endif %}
+            {% if job.salary_min %}<span class="badge badge-gold">{{ job.salary_text }}</span>{% endif %}
+            {% if job.source_type == 'employer' %}
+              <span class="badge badge-green"><i data-lucide="building-2" style="width:14px;height:14px;"></i> Employeur direct</span>
+            {% elif job.source_type == 'scraping' %}
+              {% if job.scraping_source %}
+                <span class="badge" style="{% if 'linkedin' in job.scraping_source.name|lower %}background:var(--blue-bg);border:1px solid var(--blue-border);color:var(--blue-dark){% elif 'agence' in job.scraping_source.name|lower or 'aeji' in job.scraping_source.name|lower %}background:var(--orange-bg);border:1px solid var(--orange-border);color:var(--orange-dark){% else %}background:var(--gold-bg);border:1px solid var(--gold-border);color:var(--gold-dark){% endif %};font-weight:600;padding:4px 10px;border-radius:6px"><i data-lucide="rss" style="width:14px;height:14px;margin-right:4px;display:inline"></i>{{ job.scraping_source.name }}</span>
+              {% else %}
+                <span class="badge" style="background:var(--gold-bg);border:1px solid var(--gold-border);color:var(--gold-dark);font-weight:600;padding:4px 10px;border-radius:6px"><i data-lucide="rss" style="width:14px;height:14px;margin-right:4px;display:inline"></i>Offre scrapée</span>
+              {% endif %}
+            {% elif job.source_type == 'manual' %}
+              <span class="badge" style="background:var(--blue-bg);border:1px solid var(--blue-border);color:var(--blue-dark);font-weight:600;padding:4px 10px;border-radius:6px"><i data-lucide="pen-line" style="width:14px;height:14px;margin-right:4px;display:inline"></i>Offre vérifiée</span>
+            {% endif %}
+            <span style="margin-left:auto;font-size:13px;color:var(--text-3)">{{ job.days_ago }}</span>
+          </div>
+        </div>
+      </a>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:10px;flex-shrink:0">
+        {% if user.is_authenticated and not user.is_employer %}{% match_ring score %}{% endif %}
+        <div style="display:flex;gap:7px;margin-top:{% if score %}8px{% else %}0{% endif %}">
+          <!-- Bouton selon le type d'offre -->
+          {% if job.source_type == 'employer' %}
+            <!-- Offre employeur: bouton Postuler interne -->
+            <a href="{% url 'jobs:apply' job.pk %}" class="btn btn-primary btn-sm" style="padding:8px 14px;font-weight:700;display:flex;align-items:center;gap:6px" title="Postuler sur JobFinder">
+              <i data-lucide="send" style="width:15px;height:15px"></i> Postuler
+            </a>
+          {% elif job.external_url %}
+            <!-- Offre scrappée: bouton vers le site source -->
+            <a href="{{ job.external_url }}" target="_blank" class="btn btn-secondary btn-sm" style="padding:8px 14px;font-weight:700;display:flex;align-items:center;gap:6px" title="Voir l'offre sur le site source">
+              <i data-lucide="external-link" style="width:15px;height:15px"></i> Voir l'offre
+            </a>
+          {% endif %}
+          {% if user.is_authenticated %}
+          <button id="sv-{{ job.pk }}" onclick="toggleSave({{ job.pk }},this)"
+            class="btn btn-sm" style="background:{% if saved %}var(--gold-bg){% else %}transparent{% endif %};border:1.5px solid {% if saved %}var(--gold){% else %}var(--border-2){% endif %};color:{% if saved %}var(--gold){% else %}var(--text-3){% endif %};padding:6px 9px"
+            title="Sauvegarder">
+            <i data-lucide="bookmark" style="width:15px;height:15px"></i>
+          </button>
+          <button id="it-{{ job.pk }}" onclick="interestJobCard({{ job.pk }},this)"
+            class="btn btn-sm" style="background:transparent;border:1.5px solid var(--border-2);color:var(--text-3);padding:6px 9px"
+            title="Ça m'intéresse — on vous proposera plus d'offres similaires">
+            <i data-lucide="thumbs-up" style="width:15px;height:15px"></i>
+          </button>
+          <button id="dm-{{ job.pk }}" onclick="dismissJobCard({{ job.pk }},this)"
+            class="btn btn-sm" style="background:transparent;border:1.5px solid var(--border-2);color:var(--text-3);padding:6px 9px"
+            title="Pas intéressé — améliore vos recommandations">
+            <i data-lucide="x" style="width:15px;height:15px"></i>
+          </button>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endwith %}{% empty %}
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);padding:72px;text-align:center">
+      <div style="font-size:48px;margin-bottom:16px"><i data-lucide="search" style="width:16px;height:16px;"></i></div>
+      <div class="h3" style="margin-bottom:10px">Aucune offre trouvée</div>
+      <p class="body" style="color:var(--text-2);margin-bottom:20px">Modifiez vos critères de recherche.</p>
+      <a href="{% url 'jobs:list' %}" class="btn btn-primary">Toutes les offres</a>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- PAGINATION -->
+  {% if page_obj.paginator.num_pages > 1 %}
+  <div style="display:flex;justify-content:center;gap:8px;margin-top:36px;flex-wrap:wrap">
+    {% if page_obj.has_previous %}
+    <a href="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}" class="btn btn-secondary btn-sm"><i data-lucide="arrow-left" style="width:16px;height:16px"></i> Précédent</a>
+    {% endif %}
+    {% for n in page_obj.paginator.page_range %}
+      {% if n == page_obj.number %}<span class="btn btn-primary btn-sm" style="pointer-events:none;min-width:38px">{{ n }}</span>
+      {% elif n == 1 or n == page_obj.paginator.num_pages %}<a href="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ n }}" class="btn btn-secondary btn-sm" style="min-width:38px">{{ n }}</a>
+      {% endif %}
+    {% endfor %}
+    {% if page_obj.has_next %}
+    <a href="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}" class="btn btn-secondary btn-sm">Suivant <i data-lucide="arrow-right" style="width:16px;height:16px"></i></a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+const _CSRF = '{{ csrf_token }}';
+
+async function toggleSave(pk, btn) {
+  const r = await fetch(`/jobs/${pk}/save/`, {method:'POST', headers:{'X-CSRFToken': _CSRF}});
+  const d = await r.json();
+  if (d.saved) { btn.style.background='var(--gold-bg)'; btn.style.borderColor='var(--gold)'; btn.style.color='var(--gold)'; }
+  else { btn.style.background='transparent'; btn.style.borderColor='var(--border-2)'; btn.style.color='var(--text-3)'; }
+}
+
+async function interestJobCard(pk, btn) {
+  btn.disabled = true;
+  const r = await fetch(`/jobs/${pk}/interest/`, {method:'POST', headers:{'X-CSRFToken': _CSRF}});
+  const d = await r.json();
+  btn.disabled = false;
+  if (d.interested) {
+    btn.style.background   = 'var(--gold-bg)';
+    btn.style.borderColor  = 'var(--gold)';
+    btn.style.color        = 'var(--gold)';
+    btn.title = 'Intérêt enregistré — cliquez pour annuler';
+    // Annuler le dismissed si présent
+    const dm = document.getElementById('dm-' + pk);
+    if (dm) { dm.style.background='transparent'; dm.style.borderColor='var(--border-2)'; dm.style.color='var(--text-3)'; }
+  } else {
+    btn.style.background   = 'transparent';
+    btn.style.borderColor  = 'var(--border-2)';
+    btn.style.color        = 'var(--text-3)';
+    btn.title = 'Ça m\'intéresse — on vous proposera plus d\'offres similaires';
+  }
+}
+
+async function dismissJobCard(pk, btn) {
+  btn.disabled = true;
+  btn.style.color = 'var(--red)';
+  await fetch(`/jobs/${pk}/dismiss/`, {method:'POST', headers:{'X-CSRFToken': _CSRF}});
+  // Annuler le interested si présent
+  const it = document.getElementById('it-' + pk);
+  if (it) { it.style.background='transparent'; it.style.borderColor='var(--border-2)'; it.style.color='var(--text-3)'; }
+  // Faire disparaître la carte avec animation
+  const card = btn.closest('[id^="job-card-"], .job-card, [data-job-pk]') || btn.closest('.card');
+  if (card) {
+    card.style.transition = 'opacity 0.4s, transform 0.4s';
+    card.style.opacity    = '0';
+    card.style.transform  = 'translateX(30px)';
+    setTimeout(() => card.remove(), 420);
+  }
+}
+</script>
+{% endblock %}

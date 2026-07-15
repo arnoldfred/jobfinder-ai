@@ -1,0 +1,578 @@
+{% extends 'base.html' %}
+{% load tags %}
+{% block title %}{{ job.title }} — {{ job.company }} — JobFinder AI{% endblock %}
+{% block nj %}active{% endblock %}
+
+{% block content %}
+<div class="page-inner">
+  <a href="{% url 'jobs:list' %}" style="display:inline-flex;align-items:center;gap:6px;font-size:15px;font-weight:600;color:var(--text-3);margin-bottom:24px;text-decoration:none;transition:color 0.2s" onmouseover="this.style.color='var(--gold-dark)'" onmouseout="this.style.color='var(--text-3)'">
+    <i data-lucide="arrow-left" style="width:16px;height:16px"></i> Retour aux offres
+  </a>
+
+  <div class="layout-2col">
+
+    <!-- ===== COLONNE PRINCIPALE ===== -->
+    <div style="display:grid;gap:20px">
+
+      <!-- EN-TÊTE OFFRE -->
+      <div class="card card-p">
+        <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap">
+          <div style="width:72px;height:72px;border-radius:16px;background:linear-gradient(135deg,rgba(255,250,230,0.9),rgba(255,245,210,0.8));border:1px solid var(--gold-border);display:flex;align-items:center;justify-content:center;font-size:32px;flex-shrink:0">
+            {% if job.company_logo %}<img src="{{ job.company_logo.url }}" style="width:100%;height:100%;object-fit:contain;border-radius:14px"/>
+            {% else %}<i data-lucide="{{ job.domain_icon }}" style="width:24px;height:24px"></i>{% endif %}
+          </div>
+          <div style="flex:1;min-width:0">
+            <h1 style="font-family:'Playfair Display',serif;font-size:26px;font-weight:700;line-height:1.2;margin-bottom:6px">{{ job.title }}</h1>
+            <div style="font-size:17px;color:var(--text-2);margin-bottom:14px;font-weight:500">{{ job.company }}</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+              <span class="badge badge-gray">{{ job.flag }} {{ job.location }}</span>
+              <span class="badge badge-gray">{{ job.get_job_type_display }}</span>
+              {% if job.is_remote %}<span class="badge badge-blue"><i data-lucide="globe" style="width:16px;height:16px;"></i> Remote</span>{% endif %}
+              {% if job.source_type == 'employer' %}
+              <span class="badge badge-green"><i data-lucide="building-2" style="width:14px;height:14px;"></i> Employeur direct</span>
+              {% elif job.source_type == 'scraping' %}
+                {% if job.scraping_source %}
+                <span class="badge" style="{% if 'linkedin' in job.scraping_source.name|lower %}background:var(--blue-bg);border:1px solid var(--blue-border);color:var(--blue-dark){% elif 'agence' in job.scraping_source.name|lower or 'aeji' in job.scraping_source.name|lower %}background:var(--orange-bg);border:1px solid var(--orange-border);color:var(--orange-dark){% else %}background:var(--gold-bg);border:1px solid var(--gold-border);color:var(--gold-dark){% endif %};font-weight:600;padding:4px 10px;border-radius:6px"><i data-lucide="rss" style="width:14px;height:14px;margin-right:4px;display:inline"></i>{{ job.scraping_source.name }}</span>
+                {% else %}
+                <span class="badge" style="background:var(--gold-bg);border:1px solid var(--gold-border);color:var(--gold-dark);font-weight:600;padding:4px 10px;border-radius:6px"><i data-lucide="rss" style="width:14px;height:14px;margin-right:4px;display:inline"></i>Offre scrapée</span>
+                {% endif %}
+              {% elif job.source_type == 'manual' %}
+              <span class="badge" style="background:var(--blue-bg);border:1px solid var(--blue-border);color:var(--blue-dark);font-weight:600;padding:4px 10px;border-radius:6px"><i data-lucide="pen-line" style="width:14px;height:14px;margin-right:4px;display:inline"></i>Offre vérifiée</span>
+              {% endif %}
+              <span style="font-size:13px;color:var(--text-3);margin-left:auto">{{ job.days_ago }}</span>
+            </div>
+          </div>
+          <!-- Boutons d'action selon le type d'offre -->
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0">
+            {% if job.source_type == 'employer' %}
+              <!-- Offre employeur: bouton Postuler interne -->
+              <a href="{% url 'jobs:apply' job.pk %}" class="btn btn-primary" style="padding:12px 20px;font-weight:700;font-size:15px;display:flex;align-items:center;gap:8px;white-space:nowrap">
+                <i data-lucide="send" style="width:18px;height:18px;"></i> Postuler maintenant
+              </a>
+            {% elif job.external_url %}
+              <!-- Offre scrappée: bouton vers le site source -->
+              <a href="{{ job.external_url }}" target="_blank" class="btn btn-secondary" style="padding:12px 20px;font-weight:700;font-size:15px;display:flex;align-items:center;gap:8px;white-space:nowrap">
+                <i data-lucide="external-link" style="width:18px;height:18px;"></i> Voir l'offre
+              </a>
+            {% endif %}
+          </div>
+        </div>
+        {% if job.salary_min or job.salary_display_text %}
+        <div style="margin-top:20px;padding-top:18px;border-top:1px solid var(--border);display:flex;align-items:center;gap:14px">
+          <span style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.9px;color:var(--text-3)">Rémunération</span>
+          <span style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--gold-dark)">{{ job.salary_text }}</span>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- ===== ESTIMATEUR DE CHANCES ===== -->
+      {% if user.is_authenticated and not user.is_employer %}
+      <div class="card" style="padding:28px;background:linear-gradient(135deg,rgba(255,252,235,0.95),rgba(255,248,215,0.90));border:1.5px solid var(--gold-border)">
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;flex-wrap:wrap">
+          <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,var(--gold),var(--gold-dark));display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;box-shadow:0 3px 10px var(--gold-glow)"><i data-lucide="target" style="width:18px;height:18px;"></i></div>
+          <div style="flex:1">
+            <div style="font-size:18px;font-weight:700">Vos chances pour ce poste</div>
+            <div style="font-size:14px;color:var(--text-3)">Estimé à partir de votre profil réel</div>
+          </div>
+          <div id="score-ring-wrap">{% match_ring score 72 %}</div>
+        </div>
+
+        <!-- Barre de score -->
+        <div style="background:rgba(255,255,255,0.65);border-radius:14px;padding:20px;margin-bottom:18px;border:1px solid rgba(255,255,255,0.85)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <span id="score-label" style="font-size:16px;font-weight:700;color:{{ chance_color }}">{{ chance_label }}</span>
+            <span id="score-pct" style="font-family:'Playfair Display',serif;font-size:30px;font-weight:700;color:{{ chance_color }}">{{ score }}%</span>
+          </div>
+          <div style="height:12px;background:rgba(201,168,76,0.12);border-radius:50px;overflow:hidden">
+            <div id="score-bar" style="height:100%;background:{{ chance_color }};border-radius:50px;width:{{ score }}%;transition:width 1.2s ease"></div>
+          </div>
+
+          <!-- Détail compétences -->
+          {% if skills_annotated %}
+          <div style="margin-top:20px;padding:20px;background:rgba(255,255,255,0.72);border:1px solid rgba(222,200,150,0.35);border-radius:18px">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+              <div>
+                <div style="font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:0.9px;color:var(--text-3);margin-bottom:8px">Compétences requises</div>
+                <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                  <span style="font-size:14px;font-weight:700;color:var(--green)">{{ match_details.skills_matched|length }} maîtrisée{{ match_details.skills_matched|length|pluralize }}</span>
+                  <span style="font-size:14px;font-weight:700;color:var(--red)">{{ match_details.skills_missing|length }} à acquérir</span>
+                </div>
+                {% if match_details.skills_implicit %}
+                <div style="margin-top:8px;font-size:12px;color:var(--gold-dark);display:flex;align-items:center;gap:6px">
+                  <i data-lucide="sunrise" style="width:14px;height:14px"></i>
+                  Compétences implicites : déduites du profil ou d’une réalisation, pas explicitement listées.
+                </div>
+                {% endif %}
+              </div>
+            </div>
+
+            <div style="display:flex;flex-wrap:wrap;gap:10px">
+              {% for sk in skills_annotated %}
+                {% if sk.type == 'sector' %}
+                <span style="padding:7px 14px;border-radius:8px;font-size:13px;font-weight:500;background:var(--cream-2);border:1px solid var(--border);color:var(--text-3);display:flex;align-items:center;gap:5px">
+                  <i data-lucide="tag" style="width:12px;height:12px"></i>{{ sk.name }}
+                </span>
+                {% elif sk.have == True %}
+                <span style="padding:7px 14px;border-radius:8px;font-size:14px;font-weight:600;background:var(--green-bg);border:1.5px solid var(--green-border);color:var(--green);display:flex;align-items:center;gap:5px">
+                  <i data-lucide="check" style="width:13px;height:13px"></i>{{ sk.name }}
+                </span>
+                {% elif sk.have == False %}
+                <span style="padding:7px 14px;border-radius:8px;font-size:14px;font-weight:600;background:rgba(184,50,48,.06);border:1.5px solid rgba(184,50,48,.2);color:var(--red);display:flex;align-items:center;gap:5px">
+                  <i data-lucide="plus" style="width:13px;height:13px"></i>{{ sk.name }}
+                </span>
+                {% elif sk.status == 'implicit' %}
+                <span style="padding:7px 14px;border-radius:8px;font-size:14px;font-weight:600;background:rgba(255,234,167,.25);border:1.5px solid rgba(201,168,76,.4);color:var(--gold-dark);display:flex;align-items:center;gap:5px">
+                  <i data-lucide="sunrise" style="width:13px;height:13px"></i>{{ sk.name }}
+                </span>
+                {% else %}
+                <span style="padding:7px 14px;border-radius:8px;font-size:14px;font-weight:600;background:rgba(255,250,230,0.8);border:1px solid var(--border-2);color:var(--text-2);display:flex;align-items:center;gap:5px">
+                  {{ sk.name }}
+                </span>
+                {% endif %}
+              {% endfor %}
+            </div>
+
+            {% if user.is_authenticated and not user.is_employer and match_details.skills_missing %}
+            <div style="margin-top:16px;padding:12px 14px;background:rgba(201,168,76,0.06);border:1px solid var(--gold-border);border-radius:10px;font-size:13px;color:var(--text-2)">
+              <i data-lucide="lightbulb" style="width:14px;height:14px;color:var(--gold-dark);display:inline;margin-right:4px"></i>
+              Ajoutez <strong>{{ match_details.skills_missing|length }} compétence{{ match_details.skills_missing|length|pluralize }}</strong> à votre profil pour améliorer votre matching sur ce poste.
+              <a href="{% url 'accounts:profile' %}?tab=skills" style="color:var(--gold-dark);font-weight:700;margin-left:6px">Compléter mon profil →</a>
+            </div>
+            {% elif not user.is_authenticated %}
+            <div style="margin-top:16px;padding:12px 14px;background:var(--gold-bg);border:1px solid var(--gold-border);border-radius:10px;font-size:13px;color:var(--text-2)">
+              <i data-lucide="log-in" style="width:14px;height:14px;color:var(--gold-dark);display:inline;margin-right:4px"></i>
+              <a href="{% url 'accounts:auth' %}?next={% url 'jobs:detail' job.pk %}" style="color:var(--gold-dark);font-weight:700">Connectez-vous</a> pour voir quelles compétences vous possédez déjà.
+            </div>
+            {% endif %}
+          </div>
+          {% endif %}
+
+          <!-- Critères -->
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid rgba(201,168,76,0.15)">
+            <div style="text-align:center">
+              <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;color:var(--text-3);margin-bottom:5px">Compétences</div>
+              <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--gold-dark)">{{ match_details.skills_matched|length }}/{{ match_details.total_skills }}</div>
+            </div>
+            <div style="text-align:center;border-left:1px solid var(--border);border-right:1px solid var(--border)">
+              <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;color:var(--text-3);margin-bottom:5px">Expériences</div>
+              <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--gold-dark)">{{ match_details.exp_match }}</div>
+            </div>
+            <div style="text-align:center">
+              <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;color:var(--text-3);margin-bottom:5px">Formation</div>
+              <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:{% if match_details.edu_match %}var(--green){% else %}var(--red){% endif %}">{% if match_details.edu_match %}<i data-lucide="check" style="width:16px;height:16px;"></i>{% else %}✗{% endif %}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contribution ML -->
+        {% if match_details.ml_delta and match_details.ml_delta != 0 %}
+        <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;background:{% if match_details.ml_delta > 0 %}var(--green-bg){% else %}var(--orange-bg){% endif %};border:1px solid {% if match_details.ml_delta > 0 %}var(--green-border){% else %}rgba(184,96,16,0.22){% endif %};border-radius:10px;font-size:12px;color:{% if match_details.ml_delta > 0 %}var(--green){% else %}var(--orange){% endif %};margin-bottom:10px">
+          <i data-lucide="brain-circuit" style="width:16px;height:16px;flex-shrink:0;margin-top:1px"></i>
+          <div>
+            <span style="font-weight:700">Score ML ajusté : {% if match_details.ml_delta > 0 %}+{% endif %}{{ match_details.ml_delta }} pts</span>
+            {% if match_details.ml_reasons %}
+            <div style="margin-top:3px;opacity:0.85">
+              {% for r in match_details.ml_reasons %}{{ r }}{% if not forloop.last %} · {% endif %}{% endfor %}
+            </div>
+            {% endif %}
+            <div style="margin-top:2px;opacity:0.7;font-size:11px">Score de base : {{ match_details.base_score }}% → Score final : {{ score }}%</div>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Bouton analyse IA -->
+        <button class="btn btn-primary btn-full" id="btn-chances" onclick="analyzeChancesAI()" style="font-size:15px;margin-bottom:10px">
+          <i data-lucide="bot" style="width:18px;height:18px;"></i> Analyse IA approfondie + Plan d'action personnalisé
+        </button>
+
+        <!-- Bouton Pas intéressé -->
+        <button onclick="dismissJob({{ job.pk }})" id="btn-dismiss" class="btn btn-secondary btn-full btn-sm" style="font-size:13px;color:var(--text-3);margin-bottom:6px">
+          <i data-lucide="x-circle" style="width:14px;height:14px"></i> Pas intéressé par cette offre
+        </button>
+
+        {% if not profile_data.cv_uploaded %}
+        <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--orange-bg);border:1px solid rgba(184,96,16,0.22);border-radius:10px;font-size:13px;color:var(--orange)">
+          <i data-lucide="file-text" style="width:18px;height:18px;"></i> Uploadez votre CV pour une meilleure estimation
+          <a href="{% url 'accounts:profile' %}?tab=documents" style="color:var(--gold-dark);font-weight:700;margin-left:auto">Uploader <i data-lucide="arrow-right" style="width:16px;height:16px"></i></a>
+        </div>
+        {% endif %}
+
+        {% if not profile_data.experiences %}
+        <div style="margin-top:10px;display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--red-bg);border:1px solid rgba(184,50,48,0.2);border-radius:10px;font-size:13px;color:var(--red)">
+          <i data-lucide="alert-triangle" style="width:16px;height:16px;"></i> Profil incomplet — Ajoutez vos expériences pour une analyse précise
+          <a href="{% url 'accounts:profile' %}?tab=experience" style="color:var(--gold-dark);font-weight:700;margin-left:auto">Compléter <i data-lucide="arrow-right" style="width:16px;height:16px"></i></a>
+        </div>
+        {% endif %}
+
+        <!-- Résultat analyse IA -->
+        <div id="chances-result" style="display:none;margin-top:16px">
+          <div class="ai-box" id="chances-out"></div>
+        </div>
+
+      </div>
+
+      <!-- DOCUMENTS PERSONNALISÉS -->
+      <div class="card card-gold card-p">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
+          <div style="width:44px;height:44px;border-radius:11px;background:linear-gradient(135deg,var(--gold),var(--gold-dark));display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0"><i data-lucide="sparkles" style="width:18px;height:18px;"></i></div>
+          <div>
+            <div style="font-size:17px;font-weight:700">Documents adaptés à ce poste</div>
+            <div style="font-size:13px;color:var(--text-3)">Générés à partir de votre profil réel + mots-clés de l'offre</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+          <button class="btn btn-primary" id="btn-cv" onclick="generateDoc('cv')"><i data-lucide="file-text" style="width:18px;height:18px;"></i> Adapter mon CV</button>
+          <button class="btn btn-secondary" id="btn-letter" onclick="generateDoc('cover_letter')"><i data-lucide="mail" style="width:18px;height:18px;"></i> Lettre de motivation</button>
+        </div>
+        <div id="doc-result" style="display:none">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <span id="doc-title" style="font-size:14px;font-weight:700;color:var(--gold-dark)">Document généré</span>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-primary btn-sm" onclick="copyDoc(this)"><i data-lucide="copy" style="width:14px;height:14px"></i> Copier</button>
+              <button class="btn btn-secondary btn-sm" id="btn-pdf-dl" onclick="downloadDocPDF('pdf')"><i data-lucide="file-text" style="width:14px;height:14px"></i> PDF</button>
+              <button class="btn btn-secondary btn-sm" id="btn-docx-dl" onclick="downloadDocPDF('docx')"><i data-lucide="file" style="width:14px;height:14px"></i> DOCX</button>
+              <button class="btn btn-secondary btn-sm" onclick="document.getElementById('doc-result').style.display='none'">✕</button>
+            </div>
+          </div>
+          <div id="doc-text" class="ai-box" style="max-height:300px;overflow-y:auto"></div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- DESCRIPTION -->
+      <div class="card card-p">
+        <h2 style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--border)">Description du poste</h2>
+        <div style="font-size:16px;line-height:1.85;color:var(--text)">{{ job.description|linebreaks }}</div>
+      </div>
+
+      {% if job.missions %}
+      <div class="card card-p">
+        <h2 style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--border)">Missions principales</h2>
+        <div style="font-size:16px;line-height:1.85;color:var(--text)">{{ job.missions|linebreaks }}</div>
+      </div>
+      {% endif %}
+
+      {% if job.requirements %}
+      <div class="card card-p">
+        <h2 style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--border)">Profil recherché</h2>
+        <div style="font-size:16px;line-height:1.85;color:var(--text)">{{ job.requirements|linebreaks }}</div>
+      </div>
+      {% endif %}
+
+
+      {% if job.nice_to_have %}
+      <div class="card card-p">
+        <h2 style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--border)">Atouts supplémentaires</h2>
+        <div style="font-size:16px;line-height:1.85;color:var(--text)">{{ job.nice_to_have|linebreaks }}</div>
+      </div>
+      {% endif %}
+
+      {% if job.company_about %}
+      <div class="card card-p" style="background:var(--cream-2)">
+        <h2 style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;margin-bottom:14px">À propos de {{ job.company }}</h2>
+        <p style="font-size:16px;line-height:1.85;color:var(--text-2)">{{ job.company_about }}</p>
+      </div>
+      {% endif %}
+
+    </div>
+
+    <!-- ===== SIDEBAR ===== -->
+    <div style="display:grid;gap:18px">
+
+      <!-- ACTION CARD -->
+      <div class="card card-p" style="position:sticky;top:88px">
+        {% if user.is_authenticated %}
+          {% if has_applied %}
+          <div style="background:var(--green-bg);border:1px solid var(--green-border);border-radius:12px;padding:14px;text-align:center;margin-bottom:14px;font-size:15px;font-weight:600;color:var(--green)"><i data-lucide="check" style="width:16px;height:16px;"></i> Candidature envoyée</div>
+          {% endif %}
+          <button class="btn btn-secondary btn-full" id="save-btn" onclick="toggleSave()" style="margin-bottom:16px">
+            {% if is_saved %}<i data-lucide="bookmark" style="width:16px;height:16px;"></i> Saved{% else %}<i data-lucide="bookmark" style="width:16px;height:16px;"></i> Save{% endif %}
+          </button>
+        {% else %}
+          <a href="{% url 'accounts:auth' %}?next={% url 'jobs:detail' job.pk %}" class="btn btn-secondary btn-full" style="margin-bottom:16px"><i data-lucide="bookmark" style="width:16px;height:16px;"></i> Save</a>
+        {% endif %}
+
+        {% if job.external_url %}
+        {% if job.source_type == 'scraping' %}
+        <a href="{{ job.external_url }}" target="_blank" class="btn btn-primary btn-full" style="margin-bottom:10px;background:linear-gradient(135deg,#1A5276,#154360);font-size:16px;padding:15px">
+          <i data-lucide="external-link" style="width:16px;height:16px"></i> Postuler sur le site source
+        </a>
+        <div style="font-size:12px;color:var(--text-3);text-align:center;margin-bottom:12px">
+          <i data-lucide="info" style="width:12px;height:12px"></i> Offre scrapée — vous serez redirigé vers le site original
+        </div>
+        {% else %}
+        <a href="{{ job.external_url }}" target="_blank" class="btn btn-secondary btn-sm btn-full" style="margin-bottom:14px">
+          <i data-lucide="external-link" style="width:15px;height:15px"></i> Voir l'offre originale
+        </a>
+        {% endif %}
+        {% endif %}
+
+        <div style="border-top:1px solid var(--border);padding-top:16px;display:grid;gap:12px">
+          <div style="display:flex;justify-content:space-between;font-size:15px"><span style="color:var(--text-3)">Contrat</span><span style="font-weight:600">{{ job.get_job_type_display }}</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:15px"><span style="color:var(--text-3)">Lieu</span><span style="font-weight:600">{{ job.flag }} {{ job.location }}</span></div>
+          {% if job.deadline %}<div style="display:flex;justify-content:space-between;font-size:15px"><span style="color:var(--text-3)">Date limite</span><span style="font-weight:600;color:var(--red)">{{ job.deadline|date:"d M Y" }}</span></div>{% endif %}
+          <div style="display:flex;justify-content:space-between;font-size:15px"><span style="color:var(--text-3)">Domaine</span><span style="font-weight:600">{{ job.get_domain_display }}</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:15px"><span style="color:var(--text-3)">Vues</span><span style="font-weight:600">{{ job.view_count }}</span></div>
+        </div>
+      </div>
+
+      <!-- COMPLÉTER PROFIL -->
+      {% if user.is_authenticated and not user.is_employer %}
+      {% if not profile_data.experiences %}
+      <div class="card card-p card-gold">
+        <div style="font-size:15px;font-weight:700;margin-bottom:10px;color:var(--gold-dark)"><i data-lucide="lightbulb" style="width:16px;height:16px;"></i> Améliorez votre score</div>
+        <p style="font-size:14px;color:var(--text-2);margin-bottom:14px;line-height:1.65">Ajoutez vos expériences et compétences pour une estimation précise de vos chances.</p>
+        <a href="{% url 'accounts:profile' %}?tab=experience" class="btn btn-primary btn-sm btn-full">Compléter mon profil <i data-lucide="arrow-right" style="width:16px;height:16px"></i></a>
+      </div>
+      {% endif %}
+      {% endif %}
+
+      <!-- OFFRES SIMILAIRES -->
+      {% if similar %}
+      <div class="card card-p">
+        <div style="font-size:16px;font-weight:700;margin-bottom:16px">Offres similaires</div>
+        <div style="display:grid;gap:10px">
+          {% for sj in similar %}
+          <a href="{% url 'jobs:detail' sj.pk %}" style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:10px;border:1px solid var(--border);text-decoration:none;transition:all 0.2s" onmouseover="this.style.borderColor='var(--gold-border)';this.style.background='rgba(255,252,230,0.6)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='transparent'">
+            <div style="width:40px;height:40px;border-radius:9px;background:var(--gold-bg);border:1px solid var(--gold-border);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0"><i data-lucide="{{ sj.domain_icon }}" style="width:20px;height:20px"></i></div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:14px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ sj.title }}</div>
+              <div style="font-size:13px;color:var(--text-3)">{{ sj.company }}</div>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const AI_CSRF     = '{{ csrf_token }}';
+const JOB_PK      = {{ job.pk }};
+
+async function dismissJob(pk) {
+  const btn = document.getElementById('btn-dismiss');
+  btn.disabled = true;
+  btn.innerHTML = '<i data-lucide="check" style="width:14px;height:14px"></i> Enregistré';
+  await fetch(`/jobs/${pk}/dismiss/`, {method:'POST', headers:{'X-CSRFToken': AI_CSRF}});
+  setTimeout(() => { window.history.back(); }, 800);
+}
+const JOB_TITLE        = "{{ job.title|escapejs }}";
+const JOB_COMPANY      = "{{ job.company|escapejs }}";
+const JOB_DESC         = "{{ job.description|truncatechars:600|escapejs }}";
+const JOB_SKILLS       = "{{ job.required_skills|escapejs }}";
+const JOB_IMPLICIT_SKILLS = "{{ match_details.skills_implicit|join:', '|escapejs }}";
+const NLP_SCORE        = {{ score|default:0 }};
+
+function fmtMd(t) {
+  return t
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/### (.+)/g, '<div style="font-size:16px;font-weight:700;margin:12px 0 6px">$1</div>')
+    .replace(/## (.+)/g,  '<div style="font-size:17px;font-weight:700;margin:14px 0 8px">$1</div>')
+    .replace(/^- (.+)/gm, '<div style="padding:4px 0 4px 14px;border-left:3px solid var(--gold-border);margin:3px 0">$1</div>')
+    .replace(/\n\n/g, '<br/><br/>').replace(/\n/g, '<br/>');
+}
+
+async function analyzeChancesAI() {
+  var btn = document.getElementById('btn-chances');
+  var res = document.getElementById('chances-result');
+  var out = document.getElementById('chances-out');
+  btn.innerHTML = '<span class="spinner"></span> Analyse IA en cours…';
+  btn.disabled  = true;
+  res.style.display = 'block';
+  out.innerHTML = '<div class="ai-loading"><div class="dot-3"><span></span><span></span><span></span></div> Analyse de votre profil vs cette offre…</div>';
+  try {
+    var r = await fetch('/ai/chances/', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'X-CSRFToken': AI_CSRF},
+      body: JSON.stringify({
+        job_id: JOB_PK,
+        job_title: JOB_TITLE,
+        job_description: JOB_DESC,
+        job_skills: JOB_SKILLS,
+        implicit_skills: JOB_IMPLICIT_SKILLS,
+        nlp_score: NLP_SCORE,
+      })
+    });
+    var d = await r.json();
+    out.innerHTML = fmtMd(d.result || 'Erreur.');
+    btn.innerHTML = '<i data-lucide="check" style="width:16px;height:16px;"></i> Analyse complète';
+    btn.style.background = 'var(--green-bg)';
+    btn.style.color = 'var(--green)';
+    btn.style.border = '1px solid var(--green-border)';
+  } catch(e) {
+    out.innerHTML = '<span style="color:var(--red)">Erreur réseau. Réessayez.</span>';
+    btn.innerHTML = '<i data-lucide="bot" style="width:18px;height:18px;"></i> Réessayer';
+    btn.disabled = false;
+  }
+}
+
+async function generateDoc(type) {
+  var btn   = document.getElementById(type === 'cv' ? 'btn-cv' : 'btn-letter');
+  var res   = document.getElementById('doc-result');
+  var text  = document.getElementById('doc-text');
+  var title = document.getElementById('doc-title');
+  btn.innerHTML = '<span class="spinner"></span> Génération…';
+  btn.disabled  = true;
+  res.style.display = 'block';
+  title.innerHTML = type === 'cv' ? '<i data-lucide="file-text" style="width:16px;height:16px"></i> CV adapté à ce poste' : '<i data-lucide="mail" style="width:16px;height:16px"></i> Lettre de motivation';
+  text.innerHTML = '<div class="ai-loading"><div class="dot-3"><span></span><span></span><span></span></div> Rédaction en cours…</div>';
+  try {
+    var r = await fetch('/ai/doc/' + type + '/', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'X-CSRFToken': AI_CSRF},
+      body: JSON.stringify({job_title: JOB_TITLE, company: JOB_COMPANY, job_description: JOB_DESC, job_skills: JOB_SKILLS})
+    });
+    var d = await r.json();
+    text.innerHTML = fmtMd(d.result || 'Erreur.');
+    text.dataset.raw = d.result || '';
+    btn.innerHTML = '<i data-lucide="check" style="width:16px;height:16px;"></i> ' + (type === 'cv' ? 'CV adapté' : 'Lettre rédigée');
+    btn.style.background = 'var(--green-bg)';
+    btn.style.color = 'var(--green)';
+    btn.style.border = '1px solid var(--green-border)';
+  } catch(e) {
+    text.innerHTML = '<span style="color:var(--red)">Erreur. Réessayez.</span>';
+    btn.innerHTML = type === 'cv' ? '<i data-lucide="file-text" style="width:18px;height:18px;"></i> Adapter mon CV' : '<i data-lucide="mail" style="width:18px;height:18px;"></i> Lettre de motivation';
+    btn.disabled = false;
+  }
+}
+
+function copyDoc(btn) {
+  if (!btn) btn = event.target.closest('button');
+  var t = document.getElementById('doc-text').dataset.raw || document.getElementById('doc-text').innerText;
+  navigator.clipboard.writeText(t).then(function() {
+    btn.innerHTML = '<i data-lucide="check" style="width:14px;height:14px"></i> Copié !';
+    if(window.lucide)lucide.createIcons();
+    setTimeout(function() { btn.innerHTML = '<i data-lucide="copy" style="width:14px;height:14px"></i> Copier'; if(window.lucide)lucide.createIcons(); }, 2000);
+  }).catch(function(err) {
+    console.error('Erreur lors de la copie:', err);
+    alert('Erreur : impossible de copier le texte');
+  });
+}
+
+async function applyJob() {
+  var btn = document.getElementById('apply-btn');
+  btn.innerHTML = '<span class="spinner"></span> Envoi…'; btn.disabled = true;
+  var r = await fetch('/applications/apply/' + JOB_PK + '/', {method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':AI_CSRF},body:JSON.stringify({})});
+  var d = await r.json();
+  if (d.ok) {
+    btn.outerHTML = '<div style="background:var(--green-bg);border:1px solid var(--green-border);border-radius:12px;padding:14px;text-align:center;margin-bottom:14px;font-size:15px;font-weight:600;color:var(--green)"><i data-lucide="check" style="width:16px;height:16px;"></i> Candidature envoyée</div>';
+    if(window.lucide) lucide.createIcons();
+    
+    // Toast notification
+    var toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;bottom:24px;right:24px;background:linear-gradient(135deg,var(--green),#059669);color:white;padding:18px 24px;border-radius:12px;font-size:15px;font-weight:600;display:flex;align-items:center;gap:14px;box-shadow:0 8px 24px rgba(0,0,0,0.15);z-index:10000;animation:slideIn 0.3s ease;max-width:420px;cursor:pointer';
+    toast.innerHTML = '<div><i data-lucide="check-circle" style="width:22px;height:22px;flex-shrink:0"></i></div><div style="flex:1"><div style="font-weight:700">Candidature envoyée !</div><div style="font-size:13px;opacity:0.95;margin-top:2px">Voir dans vos candidatures</div></div>';
+    toast.onclick = function() {
+      window.location.href = '/applications/';
+    };
+    document.body.appendChild(toast);
+    if(window.lucide) lucide.createIcons();
+    
+    // Auto-redirect après 4s
+    setTimeout(function() {
+      if (toast.parentNode) toast.remove();
+    }, 4000);
+  } else { btn.innerHTML = '<i data-lucide="send" style="width:18px;height:18px;"></i> Postuler'; btn.disabled = false; alert(d.msg || 'Erreur'); }
+}
+
+async function toggleSave() {
+  var btn = document.getElementById('save-btn');
+  var r = await fetch('/jobs/' + JOB_PK + '/save/', {method:'POST',headers:{'X-CSRFToken':AI_CSRF}});
+  var d = await r.json();
+  btn.innerHTML = d.saved ? '<i data-lucide="bookmark" style="width:16px;height:16px;fill:var(--gold-dark)"></i> Saved' : '<i data-lucide="bookmark" style="width:16px;height:16px;"></i> Save';
+  btn.style.borderColor = d.saved ? 'var(--gold)' : '';
+  btn.style.color = d.saved ? 'var(--gold-dark)' : '';
+  if(window.lucide) lucide.createIcons();
+  
+  // Mettre à jour le badge "Saved" dans la navigation
+  var savedBadge = document.getElementById('saved-badge');
+  if (!savedBadge) return;
+  
+  if (d.saved) {
+    // Augmenter le count
+    var currentCount = parseInt(savedBadge.textContent) || 0;
+    savedBadge.textContent = currentCount + 1;
+    savedBadge.style.display = 'inline-flex';
+  } else {
+    // Diminuer le count
+    var currentCount = parseInt(savedBadge.textContent) || 0;
+    if (currentCount > 1) {
+      savedBadge.textContent = currentCount - 1;
+    } else {
+      savedBadge.style.display = 'none';
+    }
+  }
+}
+
+async function downloadDocPDF(fmt) {
+  fmt = fmt || 'pdf';
+  var text  = document.getElementById('doc-text');
+  var title = document.getElementById('doc-title');
+  var content = (text && text.dataset.raw) ? text.dataset.raw : (text ? text.innerText : '');
+  var docTitle = title ? title.textContent.trim() : 'Document';
+  
+  if (!content || content.length < 20 || content.includes('Rédaction en cours')) {
+    alert('Générez d’abord le document avant de télécharger.');
+    return;
+  }
+  
+  var isCV = docTitle.toLowerCase().includes('cv') || docTitle.toLowerCase().includes('curriculum');
+  var btnId = fmt === 'docx' ? 'btn-docx-dl' : 'btn-pdf-dl';
+  var btn   = document.getElementById(btnId);
+  var orig  = btn ? btn.innerHTML : '';
+  if (btn) { btn.innerHTML = '<span class="spinner"></span>'; btn.disabled = true; }
+  
+  try {
+    var endpoint = fmt === 'docx' ? '/ai/docx/' : '/ai/pdf/';
+    var r = await fetch(endpoint, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'X-CSRFToken': AI_CSRF},
+      body: JSON.stringify({
+        content:       content,
+        title:         docTitle || 'Document JobFinder AI',
+        include_photo: isCV,
+      })
+    });
+    
+    var ct = r.headers.get('content-type') || '';
+    if (!r.ok) {
+      var err = ct.includes('json') ? (await r.json()).error : 'Erreur serveur ' + r.status;
+      alert('Erreur: ' + err);
+      return;
+    }
+    
+    if (!ct.includes('pdf') && !ct.includes('word') && !ct.includes('octet')) {
+      var body = await r.text();
+      alert('Réponse inattendue. Le module PDF est peut-être manquant. Lancez: pip install reportlab python-docx');
+      return;
+    }
+    
+    var blob = await r.blob();
+    var url  = URL.createObjectURL(blob);
+    var a    = document.createElement('a');
+    a.href   = url;
+    var _dt = (docTitle||'').toLowerCase();
+    var isLM  = _dt.includes('lettre') || _dt.includes('motivation');
+    var isCV2 = !isLM && (_dt.includes('cv') || _dt.includes('curriculum') || isCV);
+    var filePrefix = isLM ? 'LM' : (isCV2 ? 'CV' : 'JobFinder');
+    var fileSuffix = JOB_TITLE.replace(/[^a-zA-Z0-9]/g, '_').slice(0,25);
+    a.download = filePrefix + '_' + fileSuffix + '.' + fmt;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+  } catch(e) {
+    alert('Erreur téléchargement: ' + e.message);
+  }
+  
+  if (btn) { btn.innerHTML = orig; btn.disabled = false; if(window.lucide) lucide.createIcons(); }
+}
+</script>
+{% endblock %}

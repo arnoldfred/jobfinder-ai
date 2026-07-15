@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% block title %}Admin Analytics — JobFinder AI{% endblock %}
+
+{% block content %}
+<div class="page-inner">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;margin-bottom:32px">
+    <div>
+      <div style="font-size:13px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">⚙ Administration</div>
+      <h1 class="h1">Tableau de bord plateforme</h1>
+    </div>
+    <a href="/admin/" class="btn btn-secondary">Admin Django →</a>
+  </div>
+
+  <!-- KPIs PLATEFORME -->
+  <div class="grid-4" style="margin-bottom:28px">
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);padding:24px">
+      <div style="font-size:24px;margin-bottom:10px">👥</div>
+      <div class="stat-number">{{ data.users.total }}</div>
+      <div class="stat-label">Utilisateurs</div>
+      <div style="font-size:13px;color:var(--green);font-weight:600;margin-top:6px">+{{ data.users.new_month }} ce mois</div>
+    </div>
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);padding:24px">
+      <div style="font-size:24px;margin-bottom:10px">💼</div>
+      <div class="stat-number">{{ data.jobs.active }}</div>
+      <div class="stat-label">Offres actives</div>
+      <div style="font-size:13px;color:var(--text-3);margin-top:6px">{{ data.jobs.total }} total · +{{ data.jobs.new_week }} cette semaine</div>
+    </div>
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);padding:24px">
+      <div style="font-size:24px;margin-bottom:10px">📋</div>
+      <div class="stat-number">{{ data.applications.total }}</div>
+      <div class="stat-label">Candidatures</div>
+      <div style="font-size:13px;color:var(--green);font-weight:600;margin-top:6px">+{{ data.applications.this_week }} cette semaine</div>
+    </div>
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);padding:24px">
+      <div style="font-size:24px;margin-bottom:10px">🎯</div>
+      <div class="stat-number">{{ data.matching.avg_score }}%</div>
+      <div class="stat-label">Score matching moyen</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px">
+
+    <!-- RÉPARTITION UTILISATEURS -->
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);padding:28px">
+      <div style="font-size:17px;font-weight:700;margin-bottom:20px">👥 Utilisateurs</div>
+      <div style="display:grid;gap:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:14px;background:var(--cream-2);border-radius:10px">
+          <span style="font-size:15px;font-weight:600">🔍 Candidats</span>
+          <span style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--gold)">{{ data.users.candidates }}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:14px;background:var(--cream-2);border-radius:10px">
+          <span style="font-size:15px;font-weight:600">🏢 Recruteurs</span>
+          <span style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--gold)">{{ data.users.employers }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- OFFRES PAR SOURCE -->
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);padding:28px">
+      <div style="font-size:17px;font-weight:700;margin-bottom:20px">📥 Offres par source</div>
+      {% for src in data.jobs.by_source %}
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
+        <span style="font-size:15px;font-weight:600">
+          {% if src.source_type == 'scraping' %}🤖 Scraping{% elif src.source_type == 'employer' %}🏢 Employeurs{% else %}✍ Manuel{% endif %}
+        </span>
+        <span class="badge badge-gold">{{ src.count }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- ACTIVITÉ QUOTIDIENNE -->
+  <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);padding:28px;margin-bottom:24px">
+    <div style="font-size:17px;font-weight:700;margin-bottom:20px">📅 Activité quotidienne (14 jours)</div>
+    <div style="overflow-x:auto">
+      <div style="overflow-x:auto;-webkit-overflow-scrolling:touch"><table style="width:100%;border-collapse:collapse;font-size:14px">
+        <thead>
+          <tr style="background:var(--cream-2)">
+            <th style="padding:10px 16px;text-align:left;font-weight:700;color:var(--text-3);font-size:12px;text-transform:uppercase;letter-spacing:0.7px">Date</th>
+            <th style="padding:10px 16px;text-align:center;font-weight:700;color:var(--text-3);font-size:12px;text-transform:uppercase;letter-spacing:0.7px">Candidatures</th>
+            <th style="padding:10px 16px;text-align:center;font-weight:700;color:var(--text-3);font-size:12px;text-transform:uppercase;letter-spacing:0.7px">Nouveaux users</th>
+            <th style="padding:10px 16px;text-align:center;font-weight:700;color:var(--text-3);font-size:12px;text-transform:uppercase;letter-spacing:0.7px">Offres publiées</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for day in data.daily_activity %}
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:11px 16px;font-weight:600">{{ day.date }}</td>
+            <td style="padding:11px 16px;text-align:center">{% if day.apps %}<span class="badge badge-blue">{{ day.apps }}</span>{% else %}<span style="color:var(--text-3)">—</span>{% endif %}</td>
+            <td style="padding:11px 16px;text-align:center">{% if day.users %}<span class="badge badge-green">{{ day.users }}</span>{% else %}<span style="color:var(--text-3)">—</span>{% endif %}</td>
+            <td style="padding:11px 16px;text-align:center">{% if day.jobs %}<span class="badge badge-gold">{{ day.jobs }}</span>{% else %}<span style="color:var(--text-3)">—</span>{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- OFFRES PAR DOMAINE -->
+  <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);padding:28px">
+    <div style="font-size:17px;font-weight:700;margin-bottom:20px">🏷 Offres par domaine</div>
+    <div style="display:flex;flex-wrap:wrap;gap:10px">
+      {% for d in data.jobs.by_domain %}
+      <div style="padding:10px 18px;background:var(--cream-2);border:1px solid var(--border);border-radius:10px;display:flex;align-items:center;gap:8px">
+        <span style="font-size:15px;font-weight:700;color:var(--gold)">{{ d.count }}</span>
+        <span style="font-size:14px;font-weight:600">{{ d.domain }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

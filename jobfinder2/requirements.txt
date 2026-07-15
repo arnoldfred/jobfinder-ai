@@ -1,0 +1,42 @@
+# ══════════════════════════════════════════════════════════════
+#  JobFinder AI — Dépendances Python
+#  Django 5.2 LTS + Python 3.12 + MySQL 8.4 LTS
+# ══════════════════════════════════════════════════════════════
+
+setuptools>=75.0.0
+
+# Framework — Django 5.2 LTS (supporté jusqu'en avril 2028)
+Django==5.2.1
+
+# Base de données MySQL — driver officiel C (plus performant que PyMySQL)
+mysqlclient==2.2.8
+
+# Variables d'environnement
+python-dotenv==1.1.0
+
+# Images et fichiers
+Pillow==11.2.1
+
+# Serveur de fichiers statiques
+whitenoise==6.9.0
+
+# Scraping
+requests==2.32.3
+beautifulsoup4==4.12.3
+
+# Scheduler — tâches automatiques
+APScheduler==3.11.2
+
+# Matching NLP
+scikit-learn==1.6.1
+numpy==2.2.4
+
+# Lecture CV
+pypdf==5.4.0
+
+# Génération de documents
+python-docx==1.1.2
+reportlab==4.4.1
+
+# Déploiement web
+gunicorn==23.0.0

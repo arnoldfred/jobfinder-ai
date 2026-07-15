@@ -1,0 +1,208 @@
+{% extends 'base.html' %}
+{% block title %}Administration — JobFinder AI{% endblock %}
+{% block nadm %}active{% endblock %}
+{% block content %}
+<div class="page-inner">
+
+  <!-- Header admin -->
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;margin-bottom:28px">
+    <div>
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--red);margin-bottom:6px;display:flex;align-items:center;gap:6px">
+        <i data-lucide="shield" style="width:13px;height:13px"></i> ESPACE ADMINISTRATEUR
+      </div>
+      <h1 class="h1">Tableau de bord global</h1>
+      <p style="color:var(--text-3);font-size:14px;margin-top:4px">Vue d'ensemble de la plateforme JobFinder AI</p>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <a href="{% url 'core:admin_jobs' %}" class="btn btn-secondary btn-sm"><i data-lucide="briefcase" style="width:14px;height:14px"></i> Offres</a>
+      <a href="{% url 'core:admin_users' %}" class="btn btn-secondary btn-sm"><i data-lucide="users" style="width:14px;height:14px"></i> Utilisateurs</a>
+      <a href="{% url 'core:admin_applications' %}" class="btn btn-secondary btn-sm"><i data-lucide="send" style="width:14px;height:14px"></i> Candidatures</a>
+      <a href="{% url 'core:admin_scraping' %}" class="btn btn-secondary btn-sm"><i data-lucide="refresh-cw" style="width:14px;height:14px"></i> Scraping</a>
+      <a href="/admin/" class="btn btn-secondary btn-sm" style="background:rgba(184,50,48,.08);border-color:rgba(184,50,48,.2);color:var(--red)"><i data-lucide="settings" style="width:14px;height:14px"></i> Django Admin</a>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="grid-4" style="margin-bottom:24px">
+    <div class="card card-p" style="text-align:center">
+      <div style="width:44px;height:44px;border-radius:12px;background:var(--gold-bg);border:1px solid var(--gold-border);display:flex;align-items:center;justify-content:center;margin:0 auto 10px">
+        <i data-lucide="users" style="width:20px;height:20px;color:var(--gold-dark)"></i>
+      </div>
+      <div class="stat-number">{{ analytics.users.total }}</div>
+      <div class="stat-label">Utilisateurs</div>
+      <div style="font-size:12px;color:var(--green);margin-top:4px;font-weight:600">+{{ analytics.users.new_7d }} cette semaine</div>
+    </div>
+    <div class="card card-p" style="text-align:center">
+      <div style="width:44px;height:44px;border-radius:12px;background:var(--blue-bg);border:1px solid rgba(26,78,122,.2);display:flex;align-items:center;justify-content:center;margin:0 auto 10px">
+        <i data-lucide="briefcase" style="width:20px;height:20px;color:var(--blue)"></i>
+      </div>
+      <div class="stat-number">{{ analytics.jobs.active }}</div>
+      <div class="stat-label">Offres actives</div>
+      <div style="font-size:12px;color:var(--text-3);margin-top:4px">{{ analytics.jobs.total }} total</div>
+    </div>
+    <div class="card card-p" style="text-align:center">
+      <div style="width:44px;height:44px;border-radius:12px;background:var(--green-bg);border:1px solid var(--green-border);display:flex;align-items:center;justify-content:center;margin:0 auto 10px">
+        <i data-lucide="send" style="width:20px;height:20px;color:var(--green)"></i>
+      </div>
+      <div class="stat-number">{{ analytics.apps.total }}</div>
+      <div class="stat-label">Candidatures</div>
+      <div style="font-size:12px;color:var(--green);margin-top:4px;font-weight:600">+{{ analytics.apps.new_7d }} cette semaine</div>
+    </div>
+    <div class="card card-p" style="text-align:center">
+      <div style="width:44px;height:44px;border-radius:12px;background:rgba(184,50,48,.08);border:1px solid rgba(184,50,48,.15);display:flex;align-items:center;justify-content:center;margin:0 auto 10px">
+        <i data-lucide="building-2" style="width:20px;height:20px;color:var(--red)"></i>
+      </div>
+      <div class="stat-number">{{ analytics.employers.total }}</div>
+      <div class="stat-label">Recruteurs</div>
+      <div style="font-size:12px;color:var(--text-3);margin-top:4px">{{ analytics.employers.verified }} vérifiés</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">
+    <!-- Répartition utilisateurs -->
+    <div class="card card-p">
+      <div style="font-size:14px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px">
+        <i data-lucide="pie-chart" style="width:16px;height:16px;color:var(--gold-dark)"></i> Répartition utilisateurs
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <div style="padding:12px;border-radius:8px;background:var(--gold-bg);border:1px solid var(--gold-border);text-align:center">
+          <div style="font-family:'Playfair Display',serif;font-size:26px;font-weight:700;color:var(--gold-dark)">{{ analytics.users.jobseekers }}</div>
+          <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-top:4px">Candidats</div>
+        </div>
+        <div style="padding:12px;border-radius:8px;background:var(--blue-bg);border:1px solid rgba(26,78,122,.15);text-align:center">
+          <div style="font-family:'Playfair Display',serif;font-size:26px;font-weight:700;color:var(--blue)">{{ analytics.users.employers }}</div>
+          <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-top:4px">Recruteurs</div>
+        </div>
+      </div>
+      <a href="{% url 'core:admin_users' %}" class="btn btn-secondary btn-sm" style="width:100%">
+        <i data-lucide="arrow-right" style="width:13px;height:13px"></i> Gérer les utilisateurs
+      </a>
+    </div>
+
+    <!-- Offres à modérer -->
+    <div class="card card-p">
+      <div style="font-size:14px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px">
+        <i data-lucide="alert-triangle" style="width:16px;height:16px;color:#B86010"></i>
+        Offres à vérifier
+        {% if to_verify %}<span style="padding:2px 8px;border-radius:12px;background:rgba(184,96,16,.12);color:#B86010;font-size:11px;font-weight:700">{{ to_verify|length }}</span>{% endif %}
+      </div>
+      {% if to_verify %}
+      <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px">
+        {% for job in to_verify %}
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-radius:8px;background:var(--surface-2);border:1px solid var(--border-light)">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--text-1)">{{ job.title|truncatechars:35 }}</div>
+            <div style="font-size:11px;color:var(--text-3)">{{ job.company }}</div>
+          </div>
+          <button class="btn btn-secondary btn-sm" style="font-size:11px"
+            onclick="adminAction('{% url 'core:admin_verify_job' pk=job.pk %}', this, 'Vérifier')">
+            Vérifier
+          </button>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p style="color:var(--text-3);font-size:13px;text-align:center;padding:20px 0">✓ Aucune offre en attente</p>
+      {% endif %}
+      <a href="{% url 'core:admin_jobs' %}?status=unverified" class="btn btn-secondary btn-sm" style="width:100%">
+        <i data-lucide="arrow-right" style="width:13px;height:13px"></i> Toutes les offres non vérifiées
+      </a>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">
+    <!-- Candidatures récentes -->
+    <div class="card card-p">
+      <div style="font-size:14px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px">
+        <i data-lucide="send" style="width:16px;height:16px;color:var(--gold-dark)"></i> Candidatures récentes
+      </div>
+      {% if recent_apps %}
+      <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px">
+        {% for app in recent_apps %}
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-radius:8px;background:var(--surface-2);border:1px solid var(--border-light)">
+          <div>
+            <div style="font-size:12px;font-weight:600;color:var(--text-1)">{{ app.user.get_full_name|default:app.user.email|truncatechars:25 }}</div>
+            <div style="font-size:11px;color:var(--text-3)">{{ app.job.title|default:"(offre supprimée)"|truncatechars:30 }}</div>
+          </div>
+          <span style="padding:2px 8px;border-radius:12px;font-size:10px;font-weight:700;
+            background:{{ app.status_bg }};color:{{ app.status_text_color }}">
+            {{ app.get_status_display }}
+          </span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      <a href="{% url 'core:admin_applications' %}" class="btn btn-secondary btn-sm" style="width:100%">
+        <i data-lucide="arrow-right" style="width:13px;height:13px"></i> Toutes les candidatures
+      </a>
+    </div>
+
+    <!-- Utilisateurs récents -->
+    <div class="card card-p">
+      <div style="font-size:14px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px">
+        <i data-lucide="user-plus" style="width:16px;height:16px;color:var(--gold-dark)"></i> Nouveaux utilisateurs
+      </div>
+      {% if recent_users %}
+      <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px">
+        {% for u in recent_users %}
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-radius:8px;background:var(--surface-2);border:1px solid var(--border-light)">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="width:28px;height:28px;border-radius:50%;background:var(--gold-bg);border:1px solid var(--gold-border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--gold-dark)">
+              {{ u.first_name|first|default:u.email|first|upper }}
+            </div>
+            <div>
+              <div style="font-size:12px;font-weight:600;color:var(--text-1)">{{ u.get_full_name|default:u.email|truncatechars:25 }}</div>
+              <div style="font-size:10px;color:var(--text-3)">{{ u.date_joined|date:"d/m/Y" }}</div>
+            </div>
+          </div>
+          <span style="padding:2px 8px;border-radius:12px;font-size:10px;font-weight:700;
+            {% if u.role == 'employer' %}background:var(--blue-bg);color:var(--blue){% else %}background:var(--gold-bg);color:var(--gold-dark){% endif %}">
+            {% if u.role == 'employer' %}Recruteur{% else %}Candidat{% endif %}
+          </span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      <a href="{% url 'core:admin_users' %}" class="btn btn-secondary btn-sm" style="width:100%">
+        <i data-lucide="arrow-right" style="width:13px;height:13px"></i> Tous les utilisateurs
+      </a>
+    </div>
+  </div>
+
+  <!-- Actions rapides -->
+  <div class="card card-p" style="background:var(--gold-bg);border:1px solid var(--gold-border)">
+    <div style="font-size:14px;font-weight:700;margin-bottom:14px;color:var(--gold-dark);display:flex;align-items:center;gap:8px">
+      <i data-lucide="zap" style="width:15px;height:15px"></i> Actions rapides
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:10px">
+      <a href="{% url 'core:admin_scraping' %}" class="btn btn-secondary btn-sm">
+        <i data-lucide="refresh-cw" style="width:13px;height:13px"></i> Lancer un scraping
+      </a>
+      <a href="{% url 'core:admin_jobs' %}?status=unverified" class="btn btn-secondary btn-sm">
+        <i data-lucide="check-square" style="width:13px;height:13px"></i> Vérifier les offres
+      </a>
+      <a href="{% url 'core:admin_jobs' %}?status=active" class="btn btn-secondary btn-sm">
+        <i data-lucide="briefcase" style="width:13px;height:13px"></i> Toutes les offres actives
+      </a>
+      <a href="/admin/" class="btn btn-secondary btn-sm" style="background:rgba(184,50,48,.08);border-color:rgba(184,50,48,.2);color:var(--red)">
+        <i data-lucide="database" style="width:13px;height:13px"></i> Django Admin (BDD)
+      </a>
+    </div>
+  </div>
+</div>
+
+<script>
+function adminAction(url, btn, label) {
+  if (!confirm(`Confirmer l'action : ${label} ?`)) return;
+  fetch(url, {
+    method: 'POST',
+    headers: {'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/json'},
+  }).then(r => r.json()).then(data => {
+    if (data.ok) {
+      btn.closest('.card, div').style.opacity = '.5';
+      setTimeout(() => location.reload(), 500);
+    }
+  });
+}
+</script>
+{% endblock %}
