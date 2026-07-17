@@ -399,7 +399,7 @@ async function importCV(input) {
     btn.style.pointerEvents = 'auto';
 
     if (d.ok && d.data) {
-      importedCVData = d.data;
+      importedCVData = Object.assign({}, d.data, { cv_text: d.cv_text || '' });
       status.style.display = 'block';
       status.innerHTML = '<div style="padding:12px 16px;border-radius:10px;background:var(--green-bg);border:1px solid var(--green-border);color:var(--green);font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px">' +
         '<i data-lucide="check-circle" style="width:15px;height:15px"></i>' +

@@ -61,14 +61,14 @@ WSGI_APPLICATION = 'jobfinder.wsgi.application'
 import os as _os
 
 # ── Base de données ──────────────────────────────────────────────────────────
-# DB_ENGINE=mysql  →  MySQL 8.4 LTS (production / après upgrade MySQL)
-# DB_ENGINE=sqlite →  SQLite (développement / thèse)   ← défaut actuel
-_DB_ENGINE = _os.getenv('DB_ENGINE', 'sqlite')
+# DB_ENGINE=mysql  →  MySQL 8.4 LTS (production / phpMyAdmin)
+# DB_ENGINE=sqlite →  SQLite (développement / thèse)
+_DB_ENGINE = _os.getenv('DB_ENGINE', 'mysql')
 
 if _DB_ENGINE == 'mysql':
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.mysql',
+            'ENGINE': 'jobfinder.db_backend',
             'NAME': _os.getenv('DB_NAME', 'jobfinder_db'),
             'USER': _os.getenv('DB_USER', 'root'),
             'PASSWORD': _os.getenv('DB_PASSWORD', ''),

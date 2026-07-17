@@ -8,6 +8,40 @@ from .models import User, UserProfile, Skill, Experience, Education
 from .forms import SignupForm, LoginForm, ProfileForm, ExperienceForm, EducationForm
 
 
+def _extract_professional_summary(cv_text):
+    """Extrait un résumé professionnel à partir du texte d'un CV."""
+    import re
+
+    if not cv_text:
+        return ''
+
+    text = re.sub(r'\s+', ' ', cv_text).strip()
+    if not text:
+        return ''
+
+    patterns = [
+        r'(?:RÉSUMÉ|RESUME|PROFIL|À PROPOS|ABOUT|SYNOPSIS)\s*(?:PROFESSIONNEL|PROFESSIONAL)?\s*[:\-]\s*(.+?)(?=(?:\b(?:EXPERIENCES?|EXPÉRIENCES?|FORMATIONS?|COMPÉTENCES?|SKILLS?|LANGUES?|CERTIFICATIONS?)\b|$))',
+        r'(?:RÉSUMÉ|RESUME|PROFIL|À PROPOS|ABOUT)\s*(?:PROFESSIONNEL|PROFESSIONAL)?\s*(.+?)(?=(?:\b(?:EXPERIENCES?|EXPÉRIENCES?|FORMATIONS?|COMPÉTENCES?|SKILLS?|LANGUES?|CERTIFICATIONS?)\b|$))',
+    ]
+
+    for pattern in patterns:
+        match = re.search(pattern, text, re.IGNORECASE | re.UNICODE)
+        if match:
+            candidate = re.sub(r'\s+', ' ', match.group(1)).strip(' .;:-')
+            if len(candidate) > 20:
+                return candidate[:1000]
+
+    # Fallback simple: if the CV begins directly with a description paragraph likely to be the summary.
+    for marker in ['RÉSUMÉ PROFESSIONNEL', 'RESUME PROFESSIONNEL', 'PROFIL', 'À PROPOS']:
+        idx = text.upper().find(marker)
+        if idx != -1:
+            tail = text[idx + len(marker):]
+            if len(tail) > 20:
+                return tail[:1000]
+
+    return ''
+
+
 def auth_view(request):
     if request.user.is_authenticated:
         return redirect('core:dashboard')
@@ -16,7 +50,19 @@ def auth_view(request):
     tab = request.GET.get('tab', 'login')
 
     if request.method == 'POST':
-        action = request.POST.get('action')
+        action = request.POST.get('action', '').strip()
+        submit_signup = request.POST.get('submit_signup') == '1'
+        has_login_fields = 'password' in request.POST and 'email' in request.POST
+        has_signup_fields = any(field in request.POST for field in ('first_name', 'last_name', 'password1', 'password2', 'role'))
+
+        if action is None or action == '':
+            if submit_signup:
+                action = 'signup'
+            elif has_signup_fields and not has_login_fields:
+                action = 'signup'
+            elif has_login_fields and not has_signup_fields:
+                action = 'login'
+
         if action == 'login':
             login_form = LoginForm(request.POST)
             if login_form.is_valid():
@@ -35,12 +81,27 @@ def auth_view(request):
         elif action == 'signup':
             signup_form = SignupForm(request.POST)
             if signup_form.is_valid():
-                user = signup_form.save()
-                login(request, user, backend='accounts.backends.EmailBackend')
-                messages.success(request, 'Compte créé ! Complétez votre profil.')
-                if user.is_employer:
-                    return redirect('employers:setup')
-                return redirect('core:dashboard')
+                try:
+                    user = signup_form.save(commit=True)
+                except Exception:
+                    messages.error(request, 'Impossible d’enregistrer le compte. Vérifiez la base de données.')
+                    tab = 'signup'
+                else:
+                    if user.pk is None:
+                        messages.error(request, 'Échec de l’enregistrement du compte.')
+                        tab = 'signup'
+                    else:
+                        user.refresh_from_db()
+                        login(request, user, backend='accounts.backends.EmailBackend')
+                        messages.success(request, 'Compte créé ! Complétez votre profil.')
+                        if user.is_employer:
+                            from employers.models import EmployerProfile
+                            EmployerProfile.objects.get_or_create(
+                                user=user,
+                                defaults={'company_name': user.get_full_name() or user.email}
+                            )
+                            return redirect('employers:setup')
+                        return redirect('core:dashboard')
             tab = 'signup'
 
     return render(request, 'accounts/auth.html', {
@@ -63,14 +124,41 @@ def profile_view(request):
         section = request.POST.get('section')
 
         if section == 'personal':
+            profile_fields = ['first_name', 'last_name', 'location', 'phone', 'linkedin_url', 'github_url', 'summary', 'desired_title']
+            has_profile_data = any(
+                (field in request.POST and str(request.POST.get(field, '')).strip() != '')
+                for field in profile_fields
+            )
+
+            if request.FILES.get('avatar'):
+                avatar_file = request.FILES['avatar']
+                if getattr(avatar_file, 'size', 0) > 0:
+                    profile.avatar = avatar_file
+                    profile.save(update_fields=['avatar'])
+                    profile.compute_completion()
+                    messages.success(request, 'Photo mise à jour ✓')
+                    return redirect('/auth/profile/?tab=personal')
+
+            form = ProfileForm(request.POST, request.FILES, instance=profile)
+
             form = ProfileForm(request.POST, request.FILES, instance=profile)
             if form.is_valid():
-                form.save()
-                request.user.first_name = request.POST.get('first_name', '')
-                request.user.last_name  = request.POST.get('last_name', '')
-                request.user.save(update_fields=['first_name', 'last_name'])
-                profile.compute_completion()
-                messages.success(request, 'Profil mis à jour ✓')
+                if not any(str(request.POST.get(field, '')).strip() for field in ['location','phone','linkedin_url','github_url','summary','desired_title']) and not request.FILES.get('avatar'):
+                    request.user.first_name = request.POST.get('first_name', '')
+                    request.user.last_name  = request.POST.get('last_name', '')
+                    request.user.save(update_fields=['first_name', 'last_name'])
+                    profile.compute_completion()
+                    messages.success(request, 'Profil mis à jour ✓')
+                else:
+                    saved = form.save()
+                    request.user.first_name = request.POST.get('first_name', '')
+                    request.user.last_name  = request.POST.get('last_name', '')
+                    request.user.save(update_fields=['first_name', 'last_name'])
+                    if saved is not None:
+                        profile.compute_completion()
+                        messages.success(request, 'Profil mis à jour ✓')
+                    else:
+                        messages.error(request, 'Échec de l’enregistrement du profil.')
             else:
                 messages.error(request, 'Erreur dans le formulaire.')
             return redirect('/auth/profile/?tab=personal')
@@ -291,9 +379,17 @@ def apply_cv_import(request):
         profile.location = data['location'][:200]
         updated.append('location')
 
-    if data.get('summary') and not profile.summary:
-        profile.summary = data['summary'][:1000]
+    raw_summary = data.get('summary') or ''
+    if raw_summary and not profile.summary:
+        profile.summary = raw_summary[:1000]
         updated.append('summary')
+
+    if not profile.summary:
+        cv_text = data.get('cv_text') or ''
+        extracted_summary = _extract_professional_summary(cv_text)
+        if extracted_summary:
+            profile.summary = extracted_summary[:1000]
+            updated.append('summary')
 
     if updated:
         profile.save(update_fields=updated)
@@ -482,9 +578,8 @@ def _auto_parse_cv(user, profile):
         return
 
     # Appliquer les données extraites via apply_cv_import
-    from django.test import RequestFactory
-    from django.contrib.auth.middleware import AuthenticationMiddleware
-    import json as json_mod
+    if 'cv_text' not in data:
+        data['cv_text'] = cv_text
 
     # Appel direct à la logique d'apply (évite de recréer une requête HTTP)
     _apply_cv_data(user, profile, data)
@@ -508,9 +603,19 @@ def _apply_cv_data(user, profile, data):
     if data.get('location') and not profile.location:
         profile.location = data['location'][:200]
         updated.append('location')
-    if data.get('summary') and not profile.summary:
-        profile.summary = data['summary'][:1000]
+
+    raw_summary = data.get('summary') or ''
+    if raw_summary and not profile.summary:
+        profile.summary = raw_summary[:1000]
         updated.append('summary')
+
+    if not profile.summary:
+        cv_text = data.get('cv_text') or ''
+        extracted_summary = _extract_professional_summary(cv_text)
+        if extracted_summary:
+            profile.summary = extracted_summary[:1000]
+            updated.append('summary')
+
     if updated:
         profile.save(update_fields=updated)
 

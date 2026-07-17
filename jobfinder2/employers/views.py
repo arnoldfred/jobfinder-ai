@@ -1,9 +1,12 @@
+from datetime import date
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django import forms
+from django.utils import timezone
 from .models import EmployerProfile
 from jobs.models import Job
 from applications.models import Application
@@ -28,6 +31,15 @@ class EmployerProfileForm(forms.ModelForm):
 
 
 class JobPostForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        min_date = timezone.localdate().isoformat() if hasattr(timezone, 'localdate') else date.today().isoformat()
+        self.fields['deadline'].widget.attrs.update({
+            'class': 'form-input',
+            'type': 'date',
+            'min': min_date,
+        })
+
     class Meta:
         model = Job
         fields = [
@@ -209,9 +221,11 @@ def employer_setup(request):
     if request.method == 'POST':
         form = EmployerProfileForm(request.POST, request.FILES, instance=ep)
         if form.is_valid():
-            form.save()
-            messages.success(request, 'Profil entreprise enregistré ✓')
-            return redirect('employers:dashboard')
+            saved = form.save()
+            if saved is not None:
+                messages.success(request, 'Profil entreprise enregistré ✓')
+                return redirect('employers:dashboard')
+            messages.error(request, 'Échec de l’enregistrement du profil entreprise.')
     else:
         form = EmployerProfileForm(instance=ep)
     return render(request, 'employers/setup.html', {'form': form, 'ep': ep})

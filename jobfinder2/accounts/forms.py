@@ -15,24 +15,39 @@ class SignupForm(UserCreationForm):
     email      = forms.EmailField(widget=forms.EmailInput(attrs={'class':'form-input','placeholder':'email@exemple.com'}))
     role       = forms.ChoiceField(choices=[('jobseeker','Je cherche un emploi'),('employer','Je recrute')],
                     widget=forms.RadioSelect())
-    country    = forms.ChoiceField(choices=COUNTRIES, widget=forms.Select(attrs={'class':'form-input'}))
+    country    = forms.ChoiceField(choices=COUNTRIES, initial='CI', required=False, widget=forms.Select(attrs={'class':'form-input'}))
     password1  = forms.CharField(label='Mot de passe', widget=forms.PasswordInput(attrs={'class':'form-input','placeholder':'••••••••','id':'pw-signup'}))
     password2  = forms.CharField(label='Confirmer', widget=forms.PasswordInput(attrs={'class':'form-input','placeholder':'••••••••'}))
+
     class Meta:
         model = User
         fields = ('first_name','last_name','email','role','country','password1','password2')
+
+    def clean_country(self):
+        value = self.cleaned_data.get('country', '').strip()
+        return value or 'CI'
+
     def save(self, commit=True):
-        user = super().save(commit=False)
-        user.username = self.cleaned_data['email']
-        user.role = self.cleaned_data['role']
-        user.country = self.cleaned_data['country']
+        email = self.cleaned_data['email']
+        password = self.cleaned_data['password1']
+        user = User.objects.create_user(
+            username=email,
+            email=email,
+            password=password,
+            first_name=self.cleaned_data.get('first_name', ''),
+            last_name=self.cleaned_data.get('last_name', ''),
+            role=self.cleaned_data.get('role', 'jobseeker'),
+            country=self.cleaned_data.get('country') or 'CI',
+        )
         if commit:
             user.save()
+        UserProfile.objects.get_or_create(user=user)
         return user
 
 class ProfileForm(forms.ModelForm):
     first_name = forms.CharField(required=False, widget=forms.TextInput(attrs={'class':'form-input'}))
     last_name  = forms.CharField(required=False, widget=forms.TextInput(attrs={'class':'form-input'}))
+
     class Meta:
         model = UserProfile
         fields = ['avatar','location','phone','linkedin_url','github_url','summary','desired_title']
@@ -44,6 +59,30 @@ class ProfileForm(forms.ModelForm):
             'summary':      forms.Textarea(attrs={'class':'form-input','rows':4}),
             'desired_title':forms.TextInput(attrs={'class':'form-input','placeholder':'Data Analyst, Dev Backend...'}),
         }
+
+    def save(self, commit=True):
+        instance = self.instance
+        has_data = any(
+            self.cleaned_data.get(field_name) not in (None, '')
+            for field_name in ['location', 'phone', 'linkedin_url', 'github_url', 'summary', 'desired_title']
+        )
+
+        if not has_data and self.cleaned_data.get('avatar') in (None, ''):
+            if commit:
+                instance.save()
+            return instance
+
+        if self.cleaned_data.get('avatar') not in (None, ''):
+            instance.avatar = self.cleaned_data['avatar']
+
+        for field_name in ['location', 'phone', 'linkedin_url', 'github_url', 'summary', 'desired_title']:
+            value = self.cleaned_data.get(field_name)
+            if value not in (None, ''):
+                setattr(instance, field_name, value)
+
+        if commit:
+            instance.save()
+        return instance
 
 class ExperienceForm(forms.ModelForm):
     class Meta:
