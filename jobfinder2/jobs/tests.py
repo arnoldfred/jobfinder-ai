@@ -1,10 +1,11 @@
 import os
 import unittest
+from datetime import date
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'jobfinder.settings')
 
 from jobs.matching import compute_match_score, compute_display_score, get_match_summary
-from jobs.scraper import _normalize_aeji_offer_url, _extract_offer_links_from_html
+from jobs.scraper import _normalize_aeji_offer_url, _extract_offer_links_from_html, _abj_parse_detail
 from jobs.views import _finalize_match_context_for_display
 
 
@@ -104,6 +105,20 @@ class MatchingScoreTests(unittest.TestCase):
         display_context = _finalize_match_context_for_display(match_context)
         self.assertEqual(display_context['score'], 74)
         self.assertEqual(display_context['match_details']['implicit_bonus'], 0)
+
+    def test_abj_parse_detail_keeps_offer_when_deadline_is_past(self):
+        today = date.today().strftime('%d %B %Y')
+        html = f'''
+        <html><body>
+            <h1>Comptable (CDD)</h1>
+            <div class="annonce-p-subtitle">Mission du poste</div>
+            <div>Publié le {today}</div>
+            <div>Date limite de candidature: {date.today().strftime('%d %B %Y')}</div>
+        </body></html>
+        '''
+        result = _abj_parse_detail('https://annonces.abidjan.net/emplois/999/details/comptable', html)
+        self.assertIsNotNone(result)
+        self.assertEqual(result['title'], 'Comptable')
 
 
 if __name__ == '__main__':

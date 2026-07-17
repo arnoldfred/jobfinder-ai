@@ -31,8 +31,12 @@
               {% if job.source_type == 'employer' %}
               <span class="badge badge-green"><i data-lucide="building-2" style="width:14px;height:14px;"></i> Employeur direct</span>
               {% elif job.source_type == 'scraping' %}
-                {% if job.scraping_source %}
-                <span class="badge" style="{% if 'linkedin' in job.scraping_source.name|lower %}background:var(--blue-bg);border:1px solid var(--blue-border);color:var(--blue-dark){% elif 'agence' in job.scraping_source.name|lower or 'aeji' in job.scraping_source.name|lower %}background:var(--orange-bg);border:1px solid var(--orange-border);color:var(--orange-dark){% else %}background:var(--gold-bg);border:1px solid var(--gold-border);color:var(--gold-dark){% endif %};font-weight:600;padding:4px 10px;border-radius:6px"><i data-lucide="rss" style="width:14px;height:14px;margin-right:4px;display:inline"></i>{{ job.scraping_source.name }}</span>
+                {% if job.scraping_source and 'linkedin' in job.scraping_source.name|lower %}
+                <span class="badge" style="background:linear-gradient(135deg,rgba(10,102,194,0.12),rgba(10,102,194,0.04));border:1px solid rgba(10,102,194,0.24);color:var(--blue-dark);font-weight:700;padding:5px 10px;border-radius:999px;display:inline-flex;align-items:center;gap:6px;box-shadow:0 1px 2px rgba(10,102,194,0.08)">
+                  <i data-lucide="linkedin" style="width:14px;height:14px"></i> LinkedIn
+                </span>
+                {% elif job.scraping_source %}
+                <span class="badge" style="{% if 'agence' in job.scraping_source.name|lower or 'aeji' in job.scraping_source.name|lower %}background:var(--orange-bg);border:1px solid var(--orange-border);color:var(--orange-dark){% else %}background:var(--gold-bg);border:1px solid var(--gold-border);color:var(--gold-dark){% endif %};font-weight:600;padding:4px 10px;border-radius:6px"><i data-lucide="rss" style="width:14px;height:14px;margin-right:4px;display:inline"></i>{{ job.scraping_source.name }}</span>
                 {% else %}
                 <span class="badge" style="background:var(--gold-bg);border:1px solid var(--gold-border);color:var(--gold-dark);font-weight:600;padding:4px 10px;border-radius:6px"><i data-lucide="rss" style="width:14px;height:14px;margin-right:4px;display:inline"></i>Offre scrapée</span>
                 {% endif %}

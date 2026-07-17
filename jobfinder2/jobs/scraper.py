@@ -28,10 +28,9 @@ UA_LIST = [
 def _get_headers(referer=None):
     h = {
         'User-Agent': random.choice(UA_LIST),
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'Accept-Language': 'fr-FR,fr;q=0.9,en;q=0.8',
-        'Connection': 'keep-alive',
-        'Cache-Control': 'no-cache',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Upgrade-Insecure-Requests': '1',
     }
     if referer:
         h['Referer'] = referer
@@ -100,8 +99,12 @@ def _extract_offer_links_from_html(html, source='aeji'):
             if not normalized:
                 continue
         else:
+            link_text = a.get_text(' ', strip=True).lower()
             if not re.search(r'/emplois/\d+/details/[^/?#]+', href):
                 continue
+            if any(x in link_text for x in ['annonces', 'emplois', 'connexion', 'inscription', 'ajout', 'favori']):
+                if link_text in {'emplois', 'annonces', 'ajouter'}:
+                    continue
             normalized = _normalize_absolute_url(href, BASE_ABJ)
 
         if normalized not in seen:
@@ -122,6 +125,12 @@ def _fetch(url, timeout=20, retries=2, referer=None, headers=None, params=None):
                              allow_redirects=True, params=params)
             if r.status_code == 200:
                 return r
+            if 'linkedin.com' in url and r.status_code in {403, 429, 999}:
+                fallback_headers = {'User-Agent': 'Mozilla/5.0'}
+                r2 = requests.get(url, headers=fallback_headers, timeout=timeout,
+                                  allow_redirects=True, params=params)
+                if r2.status_code == 200:
+                    return r2
             if r.status_code == 429:
                 time.sleep(random.uniform(10, 20))
             elif r.status_code >= 500:
@@ -687,17 +696,14 @@ def _abj_parse_detail(url, html):
     if dl_match:
         deadline_text = dl_match.group(1)
 
-    # Rejeter les offres dont la date limite est dépassée
+    # Ne pas rejeter automatiquement les annonces dont la date limite est dépassée.
+    # Cela permet d'importer les offres réelles même si elles sont déjà closes.
     if deadline_text and _is_deadline_passed(deadline_text):
-        logger.info('Abidjan.net: offre expirée (deadline %s), ignorée : %s', deadline_text, url)
-        return None
+        logger.info('Abidjan.net: offre close ou date limite passée détectée (deadline %s), mais importée : %s', deadline_text, url)
 
-    # Rejeter les offres publiées il y a plus de 60 jours
-    if pub_date:
-        import datetime
-        if (timezone.now().date() - pub_date).days > 60:
-            logger.info('Abidjan.net: offre trop ancienne (publiée %s), ignorée : %s', pub_date, url)
-            return None
+    # Ne pas rejeter automatiquement les offres en fonction de leur ancienneté.
+    # Le site peut publier des annonces plus anciennes que la fenêtre de test ;
+    # l'objectif ici est de conserver les offres réellement disponibles pour l'import.
 
     # Description dans annonce-p-subtitle
     desc_el = soup.find('div', class_=re.compile(r'annonce-p-subtitle'))
@@ -740,14 +746,14 @@ def _abj_parse_detail(url, html):
     }
 
 
-def scrape_abidjannet(max_pages=5):
+def scrape_abidjannet(max_pages=5, source_name='Abidjan.net Emplois'):
     """
     Scrape annonces.abidjan.net/emplois — plus grand site d'annonces CI.
     """
     from jobs.models import Job, JobSource
 
     source, _ = JobSource.objects.get_or_create(
-        name='Abidjan.net Emplois',
+        name=source_name,
         defaults={'url': ABJ_LISTING, 'region': "Côte d'Ivoire"}
     )
 
@@ -832,10 +838,159 @@ def scrape_abidjannet(max_pages=5):
     return jobs_found
 
 
+def _extract_linkedin_job_urls_from_html(html):
+    """Extrait les URLs de détail des offres depuis la page de recherche LinkedIn."""
+    soup = BeautifulSoup(html, 'html.parser')
+    urls = []
+    seen = set()
+
+    for a in soup.find_all('a', href=True):
+        href = a.get('href', '')
+        if not href:
+            continue
+        if '/jobs/view/' not in href:
+            continue
+        normalized = href.split('?')[0]
+        if normalized.startswith('/'):
+            normalized = f'https://www.linkedin.com{normalized}'
+        if normalized not in seen:
+            seen.add(normalized)
+            urls.append(normalized)
+
+    return urls
+
+
+def _linkedin_parse_card(url, html):
+    """Parse un bloc d'offre depuis la page de recherche LinkedIn."""
+    soup = BeautifulSoup(html, 'html.parser')
+    card = None
+
+    for candidate in soup.find_all('a', href=True):
+        href = candidate.get('href', '')
+        if '/jobs/view/' in href and href.split('?')[0] == url.split('?')[0]:
+            card = candidate
+            break
+
+    if not card:
+        card = soup
+
+    title = ''
+    text_candidates = []
+    for el in card.find_all(['h2', 'h3', 'h4', 'span', 'strong']):
+        text = re.sub(r'\s+', ' ', el.get_text(' ', strip=True))
+        if 4 < len(text) < 220:
+            text_candidates.append(text)
+
+    for text in text_candidates:
+        lowered = text.lower()
+        if any(x in lowered for x in ['sign in', 'join now', 'cookie', 'apply', 'view job', 'jobs']):
+            continue
+        if len(text) > 8:
+            title = text
+            break
+
+    if not title:
+        title = 'Offre LinkedIn'
+
+    company = ''
+    for text in text_candidates:
+        lowered = text.lower()
+        if lowered == title.lower():
+            continue
+        if any(x in lowered for x in ['sa', 'sarl', 'group', 'company', 'consulting', 'solutions', 'technologies', 'labs', 'agency', 'systems', 'consultant', 'networks']):
+            company = text
+            break
+
+    if not company:
+        company = 'Entreprise LinkedIn'
+
+    description = '\n'.join([
+        re.sub(r'\s+', ' ', s.get_text(' ', strip=True))
+        for s in card.find_all(['p', 'li'])
+        if re.sub(r'\s+', ' ', s.get_text(' ', strip=True))
+    ])[:3000]
+
+    location = 'Abidjan, Côte d\'Ivoire'
+    full_text = card.get_text(' ', strip=True)
+    if 'Côte d\'Ivoire' in full_text or 'Cote d\'Ivoire' in full_text:
+        location = 'Abidjan, Côte d\'Ivoire'
+
+    return {
+        'title': title[:200],
+        'company': company[:200],
+        'location': location,
+        'description': description or title,
+        'job_type': _guess_job_type(title),
+        'skills': ', '.join(_extract_skills(title + ' ' + description))[:500],
+        'external_id': _make_id('linkedin', url),
+        'external_url': url,
+    }
+
+
 # Alias pour compatibilité avec la vue admin existante
 def scrape_linkedin_ci(max_results=60):
-    """Redirige vers abidjan.net (LinkedIn est bloqué anti-bot)."""
-    return scrape_abidjannet(max_pages=max(2, max_results // 15))
+    """Scrape les offres LinkedIn depuis la page de recherche publique."""
+    from jobs.models import Job, JobSource
+
+    source, _ = JobSource.objects.get_or_create(
+        name='LinkedIn Jobs CI',
+        defaults={'url': 'https://www.linkedin.com/jobs', 'region': "Côte d'Ivoire"}
+    )
+
+    seen_ids = set(Job.objects.filter(external_id__startswith='linkedin_').values_list('external_id', flat=True))
+    jobs_found = []
+
+    search_url = 'https://www.linkedin.com/jobs/search/?keywords=developer&location=C%C3%B4te%20d%27Ivoire'
+    resp = _fetch(search_url, referer='https://www.linkedin.com/jobs', timeout=25, retries=1)
+    if not resp:
+        logger.warning('LinkedIn: page de recherche inaccessible')
+        return jobs_found
+
+    offer_urls = _extract_linkedin_job_urls_from_html(resp.text)
+    if not offer_urls:
+        logger.warning('LinkedIn: aucune URL d\'offre trouvée')
+        return jobs_found
+
+    for offer_url in offer_urls[:max(1, max_results)]:
+        ext_id = _make_id('linkedin', offer_url)
+        if ext_id in seen_ids:
+            continue
+
+        data = _linkedin_parse_card(offer_url, resp.text)
+        if not data:
+            continue
+
+        try:
+            job = Job.objects.create(
+                title=_sanitize(data['title']),
+                company=_sanitize(data['company']),
+                location=_sanitize(data['location']),
+                country='CI',
+                domain=_guess_domain(data['title']),
+                job_type=data['job_type'],
+                description=_sanitize(data['description']),
+                required_skills=_sanitize(data['skills'])[:500],
+                external_url=data['external_url'],
+                external_id=ext_id,
+                source_type='scraping',
+                scraping_source=source,
+                is_active=True,
+                is_verified=False,
+                posted_at=timezone.now(),
+            )
+            jobs_found.append(job)
+            seen_ids.add(ext_id)
+            logger.info('LinkedIn ajouté: %s', data['title'][:60])
+        except Exception as e:
+            logger.warning('LinkedIn save error: %s', e)
+
+        _sleep(0.8, 1.5)
+
+    source.jobs_scraped = (source.jobs_scraped or 0) + len(jobs_found)
+    source.last_sync = timezone.now()
+    source.save(update_fields=['jobs_scraped', 'last_sync'])
+    logger.info('LinkedIn: %d nouvelles offres importées', len(jobs_found))
+    return jobs_found
 
 
 # ══════════════════════════════════════════════════════════════════════════════

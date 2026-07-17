@@ -399,7 +399,14 @@ def admin_scraping(request):
                 msg  = ('success', f'{len(jobs)} nouvelles offres AEJI importées.')
             except Exception as e:
                 msg = ('error', f'Erreur AEJI: {e}')
-        elif action in ('scrape_linkedin', 'scrape_abidjannet'):
+        elif action == 'scrape_linkedin':
+            try:
+                from jobs.scraper import scrape_linkedin_ci
+                jobs = scrape_linkedin_ci(max_results=20)
+                msg  = ('success', f'{len(jobs)} nouvelles offres LinkedIn importées.')
+            except Exception as e:
+                msg = ('error', f'Erreur LinkedIn: {e}')
+        elif action == 'scrape_abidjannet':
             try:
                 from jobs.scraper import scrape_abidjannet
                 jobs = scrape_abidjannet(max_pages=5)
@@ -408,10 +415,11 @@ def admin_scraping(request):
                 msg = ('error', f'Erreur Abidjan.net: {e}')
         elif action == 'scrape_all':
             try:
-                from jobs.scraper import scrape_agenceemploijeunes, scrape_abidjannet
+                from jobs.scraper import scrape_agenceemploijeunes, scrape_abidjannet, scrape_linkedin_ci
                 j1 = scrape_agenceemploijeunes(max_pages=5)
                 j2 = scrape_abidjannet(max_pages=5)
-                msg = ('success', f'{len(j1)} offres AEJI + {len(j2)} offres Abidjan.net importées.')
+                j3 = scrape_linkedin_ci(max_results=20)
+                msg = ('success', f'{len(j1)} offres AEJI + {len(j2)} offres Abidjan.net + {len(j3)} offres LinkedIn importées.')
             except Exception as e:
                 msg = ('error', f'Erreur scraping: {e}')
         elif action == 'cleanup':
