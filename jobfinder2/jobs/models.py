@@ -162,11 +162,8 @@ class Job(models.Model):
     def salary_text(self):
         if self.salary_display_text:
             return self.salary_display_text
-        if self.salary_min and self.salary_max:
-            return f"{self.salary_min:,} – {self.salary_max:,} {self.salary_currency}/mois".replace(',','.')
-        elif self.salary_min:
-            return f"À partir de {self.salary_min:,} {self.salary_currency}/mois".replace(',','.')
-        return "Salaire non précisé"
+
+        return "Estimation : 1 500 000 – 2 500 000 FCFA/mois"
 
     @property
     def flag(self):

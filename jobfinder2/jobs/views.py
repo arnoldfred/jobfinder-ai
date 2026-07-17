@@ -1,6 +1,8 @@
+from datetime import timedelta
+
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
+from django.http import JsonResponse, Http404
 from django.db.models import Q, FloatField, Value
 from django.db.models import OuterRef, Subquery
 from django.db.models.functions import Coalesce
@@ -10,6 +12,7 @@ from django.conf import settings
 from django.utils import timezone
 from .models import Job, JobMatch, SavedJob
 from applications.models import Application
+from jobs.scraper import _is_recent_scraped_offer
 
 
 def _compute_score(user, job):
@@ -175,7 +178,9 @@ def job_list(request):
         except Exception:
             pass
 
+    cutoff = timezone.now() - timedelta(days=90)
     qs = Job.objects.filter(is_active=True).select_related('scraping_source', 'employer')
+    qs = qs.exclude(source_type='scraping', posted_at__lt=cutoff)
 
     q       = request.GET.get('q', '').strip()
     country = request.GET.get('country', user_country)
@@ -372,6 +377,8 @@ def _all_job_skills(job):
 
 def job_detail(request, pk):
     job = get_object_or_404(Job, pk=pk, is_active=True)
+    if job.source_type == 'scraping' and not _is_recent_scraped_offer(job.posted_at):
+        raise Http404('Offre trop ancienne')
     job.view_count += 1
     job.save(update_fields=['view_count'])
 

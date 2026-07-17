@@ -9,6 +9,7 @@ import time
 import logging
 import hashlib
 import random
+import datetime
 from urllib.parse import urlparse
 
 import requests
@@ -160,6 +161,24 @@ def _fetch_json(url, timeout=20, retries=2, referer=None, params=None, headers=N
 
 def _sleep(mn=0.8, mx=2.0):
     time.sleep(random.uniform(mn, mx))
+
+
+def _is_recent_scraped_offer(posted_at, max_age_days=90):
+    """Vrai si une offre scrapée est publiée depuis moins de 3 mois."""
+    try:
+        if not posted_at:
+            return True
+        if isinstance(posted_at, datetime.datetime):
+            dt = posted_at
+        elif isinstance(posted_at, datetime.date):
+            dt = datetime.datetime.combine(posted_at, datetime.time.min)
+        else:
+            return True
+        if timezone.is_naive(dt):
+            dt = timezone.make_aware(dt)
+        return timezone.now() - dt <= datetime.timedelta(days=max_age_days)
+    except Exception:
+        return True
 
 
 def _make_id(prefix, text):
@@ -535,6 +554,10 @@ def scrape_agenceemploijeunes(max_pages=5):
                 ) if pub_date else timezone.now()
             except Exception:
                 pub_dt = timezone.now()
+
+            if not _is_recent_scraped_offer(pub_dt):
+                logger.info('AEJI ignorée (trop ancienne): %s', title[:60])
+                continue
 
             try:
                 job = Job.objects.create(
@@ -961,6 +984,11 @@ def scrape_linkedin_ci(max_results=60):
             continue
 
         try:
+            pub_dt = timezone.now()
+            if not _is_recent_scraped_offer(pub_dt):
+                logger.info('LinkedIn ignorée (trop ancienne): %s', data['title'][:60])
+                continue
+
             job = Job.objects.create(
                 title=_sanitize(data['title']),
                 company=_sanitize(data['company']),
@@ -976,7 +1004,7 @@ def scrape_linkedin_ci(max_results=60):
                 scraping_source=source,
                 is_active=True,
                 is_verified=False,
-                posted_at=timezone.now(),
+                posted_at=pub_dt,
             )
             jobs_found.append(job)
             seen_ids.add(ext_id)

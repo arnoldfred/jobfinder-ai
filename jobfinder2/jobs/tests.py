@@ -1,11 +1,13 @@
 import os
 import unittest
-from datetime import date
+from datetime import date, timedelta
+
+from django.utils import timezone
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'jobfinder.settings')
 
 from jobs.matching import compute_match_score, compute_display_score, get_match_summary
-from jobs.scraper import _normalize_aeji_offer_url, _extract_offer_links_from_html, _abj_parse_detail
+from jobs.scraper import _normalize_aeji_offer_url, _extract_offer_links_from_html, _abj_parse_detail, _is_recent_scraped_offer
 from jobs.views import _finalize_match_context_for_display
 
 
@@ -119,6 +121,12 @@ class MatchingScoreTests(unittest.TestCase):
         result = _abj_parse_detail('https://annonces.abidjan.net/emplois/999/details/comptable', html)
         self.assertIsNotNone(result)
         self.assertEqual(result['title'], 'Comptable')
+
+    def test_recent_scraped_offer_rule_keeps_only_last_three_months(self):
+        now = timezone.now()
+        self.assertTrue(_is_recent_scraped_offer(now - timedelta(days=30)))
+        self.assertTrue(_is_recent_scraped_offer(now - timedelta(days=90)))
+        self.assertFalse(_is_recent_scraped_offer(now - timedelta(days=95)))
 
 
 if __name__ == '__main__':
